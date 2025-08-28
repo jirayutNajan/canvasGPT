@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Layer, Rect, Stage } from "react-konva";
-import GridBackGround from "./GirdBackGround";
-import { useChatCanvas } from "../store/chatcanvas";
+import { Layer, Stage } from "react-konva";
+import GridBackGround from "./GridBackGround";
+import { useChatCanvas } from "../store/chatstore";
 import Chat from "./Chat";
 
-const InfiniteCanvasKonva: React.FC = () => {
+const InfiniteCanvasKonva = ({isSideBarClosed}: {isSideBarClosed: boolean}) => {
   const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
 
@@ -19,7 +19,7 @@ const InfiniteCanvasKonva: React.FC = () => {
 
   return (
     // Stage คือ canvas หลัก
-    <div>
+    <div className={`${isSideBarClosed ? "pl-15": "pl-50"}`}>
       <Stage 
         width={canvasSize.width} 
         height={canvasSize.height}

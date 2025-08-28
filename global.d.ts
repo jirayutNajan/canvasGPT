@@ -20,6 +20,6 @@ interface Window {
   },
   chatsDB: {
     insert: (doc: Chat) => Promise<Chat>;
-    find: (query?: Partial<Chat>, projection?: Partial<Record<keyof Chat, 1>>) => Promise<Chat[]>;
+    find: (query?: Partial<Chat>, projection?: Partial<Record<keyof Chat, 0 | 1>>) => Promise<Chat[]>;
   }
 }

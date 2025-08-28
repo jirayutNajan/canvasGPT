@@ -19,6 +19,7 @@ const GridBackGround= ({ width, height, stagePos }: GridBackGroundProps) => {
     for (var y = startY; y < endY; y += SPACE) {
       gridComponents.push(
         <Circle
+          key={x.toString() + y.toString()}
           x={x}
           y={y}
           width={5}
