@@ -10,7 +10,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   hasAPIKey: () => ipcRenderer.invoke('has-api-key')
 });
 
-contextBridge.exposeInMainWorld('chatsDB', {
-  insert: (doc) => ipcRenderer.invoke('chats-insert', doc),
-  find: (query = {}, projection = null) => ipcRenderer.invoke('chats-find', query, projection)
-})
+contextBridge.exposeInMainWorld('chat', {
+  getChats: () => ipcRenderer.invoke('chats-get'),
+  getChat: (_id) => ipcRenderer.invoke('chats-getOne', _id),
+  addChat: (chat) => ipcRenderer.invoke('chats-add', chat),
+  updateChat: (chat) => ipcRenderer.invoke('chats-update', chat),
+  updateXY: (chat) => ipcRenderer.invoke('chats-update-x-y', chat),
+  deleteChat: (_id) => ipcRenderer.invoke('chats-delete', _id)
+});

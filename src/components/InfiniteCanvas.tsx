@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { Layer, Stage } from "react-konva";
 import GridBackGround from "./GridBackGround";
-import { useChatCanvas } from "../store/chatstore";
+import { useSideBarstore } from "../store/sidebarstore";
 import Chat from "./Chat";
 
-const InfiniteCanvasKonva = ({isSideBarClosed}: {isSideBarClosed: boolean}) => {
+const InfiniteCanvas = ({ chat }: { chat: Chat }) => {
+  const { isOpen: isSideBarOpen } = useSideBarstore();
+
   const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
-
-  const { chat, setChat, addChatLog } = useChatCanvas();
 
   // กัน window resize แล้ว canvas size ไม่เปลี่ยน
   useEffect(() => {
@@ -19,7 +19,7 @@ const InfiniteCanvasKonva = ({isSideBarClosed}: {isSideBarClosed: boolean}) => {
 
   return (
     // Stage คือ canvas หลัก
-    <div className={`${isSideBarClosed ? "pl-15": "pl-50"}`}>
+    <div className={`${!isSideBarOpen ? "pl-15": "pl-50"}`}>
       <Stage 
         width={canvasSize.width} 
         height={canvasSize.height}
@@ -40,4 +40,4 @@ const InfiniteCanvasKonva = ({isSideBarClosed}: {isSideBarClosed: boolean}) => {
   )
 }
 
-export default InfiniteCanvasKonva;
+export default InfiniteCanvas;

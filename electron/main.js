@@ -2,21 +2,16 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import keytar from 'keytar'
-import Datastore from 'nedb';
+import db from './db/db.js';
 
 // สำหรับ ES Module path ต้องแปลง __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// db collection
-const chatsDB = new Datastore({ filename: path.join(__dirname, 'db', 'chats.db'), autoload: true })
-chatsDB.ensureIndex({ fieldName: 'createdAt' });
-
 const isDev = !app.isPackaged
 let win
 
 // renderer หมายถึง ส่วนของ react
-
 function createWindow() {
   win = new BrowserWindow({
     width: 1366,
@@ -75,22 +70,50 @@ ipcMain.handle('has-api-key', async(_evt) => {
   return !!key;
 })
 
-ipcMain.handle('chats-insert', async (_evt, doc) => {
-  return new Promise((resolve, reject) => {
-    chatsDB.insert(doc, (err, newDoc) => {
-      if (err) reject(err);
-      else resolve(newDoc);
-    })
-  })
+ipcMain.handle('chats-get', () => {
+  const chats = db.getCollection('chats').find();
+  return chats;
 })
 
-ipcMain.handle('chats-find', async (_evt, query = {}, projection = null) => {
-  return new Promise((resolve, reject) => {
-    let cursor = chatsDB.find(query);
-    if(projection) cursor = cursor.projection(projection);
-    cursor.exec((err, docs) => {
-      if (err) reject(err);
-      else resolve(docs);
-    })
-  })
+ipcMain.handle('chats-getOne', (_evt, _id) => {
+  const chats = db.getCollection('chats');
+  const existing = chats.findOne({ $loki: Number(_id) });
+  if(!existing) return null;
+  return existing;
+})
+
+ipcMain.handle('chats-add', (_evt, chat) => {
+  const chats = db.getCollection('chats');
+  const newChat = chats.insert(chat);
+  db.saveDatabase();
+  return newChat;
+})
+
+ipcMain.handle('chats-update', (_evt, chat) => {
+  const chats = db.getCollection('chats');
+  const existing = chats.findOne({ $loki: Number(chat.$loki) });
+  if(!existing) return null;
+  Object.assign(existing, chat);
+  chats.update(existing);
+  db.saveDatabase();
+  return existing;
+})
+
+ipcMain.handle('chats-update-x-y', (_evt, chat) => {
+  const chats = db.getCollection('chats');
+  const existing = chats.findOne({ $loki: Number(chat.$loki) });
+  if(!existing) return null;
+  Object.assign(existing, chat);
+  chats.update(existing);
+  return existing;
+})
+
+ipcMain.handle('chats-delete', (_evt, _id) => {
+  _id = Number(_id);
+  const chats = db.getCollection('chats');
+  const existing = chats.findOne({ $loki: Number(_id) });
+  if(!existing) return false;
+  chats.remove(existing);
+  db.saveDatabase();
+  return true;
 })

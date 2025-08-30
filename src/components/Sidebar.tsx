@@ -1,23 +1,20 @@
 import { IoMdAdd } from "react-icons/io"
 import { useEffect, useState } from "react"
+import { useSideBarstore } from "../store/sidebarstore";
+import { Link } from "react-router-dom";
 
-const Sidebar = ({
-  isSideBarClosed, 
-  setSideBarClosed, 
-}: {
-  isSideBarClosed: boolean, 
-  setSideBarClosed: () => void,
-}) => {
+const Sidebar = () => {
   const [chats, setChats] = useState<Chat[]>([]);
+  // TODO toggle sidebar
+  const { isOpen: isSideBarOpen } = useSideBarstore();
 
   useEffect(() => {
     const fetchChat = async () => {
       try {
-        const docs = await window.chatsDB.find({}, { chat_logs: 0 })
+        const docs = await window.chat.getChats();
         if(docs.length !== 0) {
           setChats(docs);
         }
-        // TODO add dummy doc
       } catch (error) {
         console.log(error)
       }
@@ -27,8 +24,10 @@ const Sidebar = ({
   }, [])
 
   return (
-    <div className={`fixed ${isSideBarClosed ? "w-15": "w-50"} h-screen bg-[#2a2a2a] flex flex-col py-4 px-3`}>
-      <h1 className="text-xl">CanvasGPT</h1>
+    <div className={`fixed ${!isSideBarOpen ? "w-15": "w-50"} h-screen bg-[#2a2a2a] flex flex-col py-4 px-3`}>
+      <Link to={"/"}>
+        <h1 className="text-xl">CanvasGPT</h1>
+      </Link>
       <div className="flex items-center mt-4 gap-2 hover:bg-[#0000003c] p-2 rounded-xl cursor-pointer">
         <IoMdAdd size={20}/>
         <h1>New Canvas</h1>
@@ -37,9 +36,11 @@ const Sidebar = ({
       <h1 className="py-1 text-[#b8b4b4]">Chats</h1>
       <div>
         {chats?.map((chat) => (
-          <div className="hover:bg-[#0000003c] py-1 px-2 cursor-pointer rounded-md text-sm" key={chat._id}>
-            <h1 className="truncate">{chat.name}</h1>
-          </div>
+          <Link key={chat.$loki} to={`/${chat.$loki}`}>
+            <div className="hover:bg-[#0000003c] py-1 px-2 cursor-pointer rounded-md text-sm">
+              <h1 className="truncate">{chat.name}</h1>
+            </div>
+          </Link>
         ))}
       </div>
     </div>

@@ -1,35 +1,17 @@
-import { useEffect, useState } from "react"
-import { useChatCanvas } from "./store/chatstore";
-import ApiKey from "./components/ApiKey"
-import InputPrompt from "./components/InputPrompt";
-import InfiniteCanvas from "./components/InfiniteCanvas";
-import Sidebar from "./components/Sidebar";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import Layout from "./components/Layout";
+import { Home } from "./pages/Home";
 
 function App() {
-  const [isSideBarClosed, setSideBarClosed] = useState(false);
-  const [hasApiKey, setHasApiKey] = useState(true);
-
-  useEffect(() => {
-    async function checkAPI() {
-      const exists = await window.electronAPI?.hasAPIKey();
-      if(!exists) {
-        setHasApiKey(false)
-      }
-    }
-    
-    checkAPI();
-  }, [])
-
   return (
-    <div>
-      <InputPrompt />
-      <Sidebar 
-        isSideBarClosed={isSideBarClosed} 
-        setSideBarClosed={() => setSideBarClosed(prev => !prev)}
-      />
-      <InfiniteCanvas isSideBarClosed={isSideBarClosed} />
-      {!hasApiKey && <ApiKey setHasApiKey={setHasApiKey}/>}
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />          {/* path="/" */}
+          <Route path=":id" element={<Home />} />     {/* path="/:id" */}
+        </Route>
+      </Routes>
+    </BrowserRouter>
   )
 }
 
