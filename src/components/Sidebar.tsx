@@ -1,27 +1,38 @@
 import { IoMdAdd } from "react-icons/io"
-import { useEffect, useState } from "react"
 import { useSideBarstore } from "../store/sidebarstore";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 const Sidebar = () => {
-  const [chats, setChats] = useState<Chat[]>([]);
+  // const [chats, setChats] = useState<Chat[]>([]);
   // TODO toggle sidebar
   const { isOpen: isSideBarOpen } = useSideBarstore();
 
-  useEffect(() => {
-    const fetchChat = async () => {
-      try {
-        const docs = await window.chat.getChats();
-        if(docs.length !== 0) {
-          setChats(docs);
-        }
-      } catch (error) {
-        console.log(error)
-      }
-    }
+  // useEffect(() => {
+  //   const fetchChat = async () => {
+  //     try {
+  //       const docs = await window.chat.getChats();
+  //       if(docs.length !== 0) {
+  //         setChats(docs);
+  //       }
+  //     } catch (error) {
+  //       console.log(error)
+  //     }
+  //   }
 
-    fetchChat()
-  }, [])
+  //   fetchChat()
+  // }, [])
+
+  const { data: chats } = useQuery<Chat[]>({
+    queryKey: ['chats'],
+    queryFn: async () => {
+      const docs = await window.chat.getChats();
+      if(docs.length !== 0) {
+        return docs;
+      }
+      else return [];
+    }
+  })
 
   return (
     <div className={`fixed ${!isSideBarOpen ? "w-15": "w-50"} h-screen bg-[#2a2a2a] flex flex-col py-4 px-3`}>

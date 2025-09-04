@@ -2,7 +2,6 @@ import { useRef, useState, type ReactNode } from "react";
 import { useSideBarstore } from "../store/sidebarstore";
 import { useChatCanvas } from "../store/chatstore";
 
-// TODO เปลี่ยน index เป็น _id: uuid ของ chatlog และ สร้าง id
 const InfiniteCanvas = () => {
   const { chat, setChat } = useChatCanvas();
 
@@ -57,7 +56,6 @@ const InfiniteCanvas = () => {
       <div
         className="bg-gray-500 w-full h-screen"
         style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
-        onMouseDown={(e) => handleMouseDown(e, "world")}
       >
         {children}
       </div>
@@ -69,6 +67,7 @@ const InfiniteCanvas = () => {
       className={`w-full h-screen ${!isSideBarOpen ? "ml-15": "ml-50"} py-4 z-0 overflow-hidden relative`}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
+      onMouseDown={(e) => handleMouseDown(e, "world")}
     >
       <button>Add Text</button>
       {/* World // World คือ canvas นั่นแหละ */}

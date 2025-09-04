@@ -1,8 +1,58 @@
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react"
 import { FaCircleArrowUp } from "react-icons/fa6"
+import { v4 as uuidv4 } from "uuid";
+import { useChatCanvas } from "../store/chatstore";
+import { useQueryClient } from "@tanstack/react-query";
 
-const InputPrompt = ({ addChat }: { addChat: (input: string) => void }) => {
+const InputPrompt = () => {
   const [text, setText] = useState("");
+  
+  const { chat, addChatLog, setChat } = useChatCanvas();
+  const queryClient = useQueryClient();
+
+  const { mutate: addChat } = useMutation({
+    mutationFn: async (input: string) => {
+      if(chat.chat_logs?.length === 0) setChat({name: input});
+
+      const dummyChatLog: ChatLog = {
+        _id: uuidv4(),
+        input, 
+        response: "ChatGPT ทำงานโดยใช้ โมเดลภาษา (Large Language Model) ที่ฝึกจากข้อความจำนวนมหาศาล เพื่อเรียนรู้รูปแบบภาษา ความสัมพันธ์ของคำ และบริบท เวลาเราพิมพ์ข้อความเข้าไป โมเดลจะคำนวณหาคำถัดไปที่น่าจะใช่ที่สุดต่อเนื่องไปเรื่อย ๆ จนกลายเป็นประโยคหรือคำตอบที่เห็นครับ ✅",
+        createdAt: Date.now().toString(), 
+        position: chat?.chat_logs?.length === 0 ? { x: window.innerWidth/2, y: window.innerHeight/2 } : { x: 0, y: 0 } 
+      }
+
+      addChatLog(dummyChatLog)
+      
+      // TODO ย้่ายโค้ดนี้ไปที่ store
+      // new chat
+      if(chat.chat_logs?.length === 0) {
+        let newChat: Chat = {
+          name: input,
+          chat_logs: [dummyChatLog],
+        }
+        newChat = await window.chat.addChat(newChat);
+        setChat(newChat);
+        queryClient.setQueryData(['chats'], (oldData: Chat[]) => {
+          return [
+            newChat,
+            ...oldData
+          ]
+        })
+      }
+      else {
+        let updatedChat: Chat = {
+          ...chat,
+          chat_logs: [
+            ...(chat.chat_logs || []),
+            dummyChatLog
+          ]
+        }
+        console.log(await window.chat.updateChat(updatedChat))
+      }
+    }
+  })
 
   const handleClick = async () => {
     if(!text.trim()) return;
