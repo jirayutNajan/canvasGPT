@@ -1,6 +1,5 @@
 import { Outlet } from "react-router-dom"
 import { useEffect } from "react"
-import InputPrompt from "./InputPrompt"
 import Sidebar from "./Sidebar"
 import { useApiStore } from "../store/hasapistore"
 import ApiKey from "./ApiKey"

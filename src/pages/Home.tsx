@@ -2,7 +2,8 @@ import { useLocation, useNavigate, useParams } from "react-router-dom"
 import InfiniteCanvas from "../components/InfiniteCanvas"
 import InputPrompt from "../components/InputPrompt";
 import { useChatCanvas } from "../store/chatstore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 
 export const Home = () => {
   const { id: chatId } = useParams();
@@ -11,8 +12,11 @@ export const Home = () => {
 
   const { chat, setChat, addChatLog } = useChatCanvas();
 
+  const [isFinishLoading, setFinishLoading] = useState(false);
+
   useEffect(() => {
     async function getChat() {
+      setFinishLoading(false);
       if(chatId) {
         const chat = await window.chat.getChat(chatId);
         if(chat) {
@@ -26,15 +30,19 @@ export const Home = () => {
       else {
         setChat({ name: "", chat_logs: [] })
       }
+      setFinishLoading(true);
     }
 
     getChat()
   }, [chatId])
 
+  
+
   const AddChat = async (input: string) => {
     if(chat.chat_logs?.length === 0) setChat({name: input});
 
-    const dummyChatLog = {
+    const dummyChatLog: ChatLog = {
+      _id: uuidv4(),
       input, 
       response: "ChatGPT ทำงานโดยใช้ โมเดลภาษา (Large Language Model) ที่ฝึกจากข้อความจำนวนมหาศาล เพื่อเรียนรู้รูปแบบภาษา ความสัมพันธ์ของคำ และบริบท เวลาเราพิมพ์ข้อความเข้าไป โมเดลจะคำนวณหาคำถัดไปที่น่าจะใช่ที่สุดต่อเนื่องไปเรื่อย ๆ จนกลายเป็นประโยคหรือคำตอบที่เห็นครับ ✅",
       createdAt: Date.now().toString(), 
@@ -46,7 +54,7 @@ export const Home = () => {
     if(chat.chat_logs?.length === 0) {
       let newChat: Chat = {
         name: input,
-        chat_logs: [dummyChatLog]
+        chat_logs: [dummyChatLog],
       }
       await window.chat.addChat(newChat);
     }
@@ -64,7 +72,7 @@ export const Home = () => {
 
   return (
     <>
-      <InfiniteCanvas chat={chat} />
+      {isFinishLoading && <InfiniteCanvas />}
       <InputPrompt addChat={AddChat} />
       <div className="fixed top-3 flex w-full justify-center">http://localhost:5173{url.pathname}</div>
     </>

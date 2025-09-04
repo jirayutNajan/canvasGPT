@@ -1,5 +1,5 @@
 interface ChatLog {
-  _id?: string;
+  _id: string;
   input: string;
   response?: string;
   createdAt?: string;
@@ -11,7 +11,7 @@ interface Chat {
   _id?: string;
   $loki?: string;
   name: string;
-  chat_logs?: ChatLog[]
+  chat_logs?: ChatLog[];
 }
 
 interface Window {

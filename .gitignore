@@ -25,3 +25,5 @@ dist-ssr
 
 electron/db/*.db
 .env
+
+note.txt
