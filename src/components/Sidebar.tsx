@@ -4,24 +4,8 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 const Sidebar = () => {
-  // const [chats, setChats] = useState<Chat[]>([]);
   // TODO toggle sidebar
   const { isOpen: isSideBarOpen } = useSideBarstore();
-
-  // useEffect(() => {
-  //   const fetchChat = async () => {
-  //     try {
-  //       const docs = await window.chat.getChats();
-  //       if(docs.length !== 0) {
-  //         setChats(docs);
-  //       }
-  //     } catch (error) {
-  //       console.log(error)
-  //     }
-  //   }
-
-  //   fetchChat()
-  // }, [])
 
   const { data: chats } = useQuery<Chat[]>({
     queryKey: ['chats'],

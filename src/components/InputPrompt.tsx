@@ -15,6 +15,7 @@ const InputPrompt = () => {
     mutationFn: async (input: string) => {
       if(chat.chat_logs?.length === 0) setChat({name: input});
 
+      // TODO implement ai กับ electron ใน main.js และ เปลี่ยน _id จาก uuidv4 เป็น int incremental
       const dummyChatLog: ChatLog = {
         _id: uuidv4(),
         input, 

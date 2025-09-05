@@ -22,7 +22,7 @@ const Layout = () => {
     <>
       <Sidebar />
       <Outlet />
-      {!hasApi && <ApiKey setHasApiKey={setHasApi}/>}
+      {/* {!hasApi && <ApiKey setHasApiKey={setHasApi}/>} */}
     </>
   )
 }

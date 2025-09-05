@@ -1,20 +1,30 @@
-import { useRef, useState, type ReactNode } from "react";
+import React, { useRef, type ReactNode } from "react";
 import { useSideBarstore } from "../store/sidebarstore";
 import { useChatCanvas } from "../store/chatstore";
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
+import "katex/dist/katex.min.css";
 
 const InfiniteCanvas = () => {
-  const { chat, setChat } = useChatCanvas();
+  const { chat } = useChatCanvas();
+  const { isOpen: isSideBarOpen } = useSideBarstore();
 
   // state and ref of canvas
-  const [offset, setOffSet] = useState({ x: 0, y: 0 });;
+  const offsetRef = useRef({ x: 0, y: 0 });
+  const worldDivRef = useRef<HTMLDivElement>(null);
   const lastPos = useRef({ x: 0, y: 0 }); // ตำแหน่ง mouse ล่าสุด ใช้ useRef เพราะแค่เก็บค่า แต่ไม่ต้อง rerender ทำให้ ลื่น
   const panning = useRef(false);
   
   // object on canvas
-  // const [chatLogs, setChatLogs] = useState<ChatLog[]>(chat.chat_logs || []);
+  const objectsPos = useRef<{ [id: string]: { x: number, y: number } }>({});
+  // initail objectsPos
+  chat.chat_logs?.forEach(log => {
+    objectsPos.current[log._id] = { x: log.position.x, y: log.position.y };
+  })
   const draggingObject = useRef<string | null>(null);
-
-  const { isOpen: isSideBarOpen } = useSideBarstore();
+  const objectDivRefs = useRef<{ [id: string]: HTMLDivElement}>({});
 
   const handleMouseDown = (e: React.MouseEvent, type: "world" | "object", id?: string) => {
     lastPos.current = { x: e.clientX, y: e.clientY };
@@ -33,20 +43,35 @@ const InfiniteCanvas = () => {
     lastPos.current = { x: e.clientX, y: e.clientY };
 
     if(panning.current) {
-      setOffSet((o) => ({ x: o.x + dx, y: o.y + dy })); // o, b คือ prev state
+      offsetRef.current = { x: offsetRef.current.x + dx, y: offsetRef.current.y + dy };
+      worldDivRef.current!.style.transform = `translate(${offsetRef.current.x}px, ${offsetRef.current.y}px)`;
     }
     else if (draggingObject.current) {
-      setChat({
-        ...chat,
-        chat_logs: chat.chat_logs?.map((c) => 
-          c._id === draggingObject.current ? { ...c, position: { x: c.position.x + dx, y: c.position.y + dy } } : c
-        )
-      })
-      window.chat.updateChat(chat);
+      const id = draggingObject.current;
+      objectsPos.current[id] = {
+        x: objectsPos.current[id].x + dx,
+        y: objectsPos.current[id].y + dy,
+      }
+      objectDivRefs.current[id].style.left = `${objectsPos.current[id].x}px`;
+      objectDivRefs.current[id]!.style.top = `${objectsPos.current[id].y}px`;
     }
   }
 
   const onMouseUp = () => {
+    if(draggingObject.current) {
+      const updatedXYChat = 
+      { ...chat, 
+        chat_logs: chat.chat_logs?.map((c) => 
+          c._id === draggingObject.current ? 
+            { ...c, position: { 
+              x: objectsPos.current[draggingObject.current].x , 
+              y: objectsPos.current[draggingObject.current].y 
+            } } 
+          : c 
+        ) 
+      }
+      window.chat.updateChat(updatedXYChat);
+    }
     draggingObject.current = null;
     panning.current = false;
   }
@@ -54,13 +79,28 @@ const InfiniteCanvas = () => {
   const World = ({ children }: { children: ReactNode }) => {
     return (
       <div
-        className="bg-gray-500 w-full h-screen"
-        style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
+        ref={worldDivRef}
       >
         {children}
       </div>
     )
   }
+
+  interface MemoizedMarkdownProps {
+    children?: string;
+  }
+  
+  const MemoizedMarkdown: React.FC<MemoizedMarkdownProps> = React.memo(
+    ({ children }) => {
+      return (
+        <ReactMarkdown
+          children={children}
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
+        />
+      );
+    },
+  );
 
   return (
     <div 
@@ -73,9 +113,14 @@ const InfiniteCanvas = () => {
       {/* World // World คือ canvas นั่นแหละ */}
       <World>
         {chat.chat_logs?.map((chatLog) => (
-          <div 
+          <div
+          ref={(el) => {
+            if (el) {
+              objectDivRefs.current[chatLog._id] = el;
+            }
+          }}
             key={chatLog._id}
-            className="max-w-md bg-red-500 absolute" 
+            className="max-w-xl bg-[#4c4c4c] absolute flex flex-col gap-1 border-1 border-[#6a6a6a] p-2 rounded-xl"
             style={{
               left: chatLog.position.x,
               top: chatLog.position.y
@@ -90,8 +135,12 @@ const InfiniteCanvas = () => {
               }
             }}
           >
-            <h1>{chatLog.input}</h1>
-            <h1>{chatLog.response}</h1>
+            <div className="flex justify-end">
+              <h1 className="flex bg-[#6a6a6a] py-1 px-2 rounded-md">{chatLog.input}</h1>
+            </div>
+            <div>
+              <MemoizedMarkdown children={chatLog.response} />
+            </div>
           </div>
         ))}
       </World>
@@ -100,3 +149,8 @@ const InfiniteCanvas = () => {
 }
 
 export default InfiniteCanvas;
+
+/* 
+note ใช้ useRef แทนถ้าค่าที่ render ไม่เปลี่ยน ใช้ usestate แค่ตอนเปลี่ยน text ก็พอ
+เปลี่ยน style ถ้าใช้ useState rerender บ่อยจะ lag ให้ useRef เปลี่ยน ไม่ lag เลย
+*/
