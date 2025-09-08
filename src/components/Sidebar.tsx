@@ -19,7 +19,7 @@ const Sidebar = () => {
   })
 
   return (
-    <div className={`fixed ${!isSideBarOpen ? "w-15": "w-50"} h-screen bg-[#2a2a2a] flex flex-col py-4 px-3`}>
+    <div className={`fixed ${!isSideBarOpen ? "w-15": "w-50"} h-screen bg-[#2a2a2a] flex flex-col py-4 px-3 z-10`}>
       <Link to={"/"}>
         <h1 className="text-xl">CanvasGPT</h1>
       </Link>

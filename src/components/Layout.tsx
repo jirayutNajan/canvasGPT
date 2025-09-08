@@ -20,8 +20,8 @@ const Layout = () => {
 
   return (
     <>
-      <Sidebar />
       <Outlet />
+      <Sidebar />
       {/* {!hasApi && <ApiKey setHasApiKey={setHasApi}/>} */}
     </>
   )

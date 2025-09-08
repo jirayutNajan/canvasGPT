@@ -1,26 +1,30 @@
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 
 export default function SvgLine() {
-  const pos = useRef({ startX: 10, startY: 50, endX: 190, endY: 50});
+  const posRef = useRef({ startX: 10, startY: 50, endX: 190, endY: 50});
   const lineRef = useRef<SVGLineElement | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
 
-  useEffect(() => {
-    if (lineRef.current) {
-      // set style โดยตรง
-      lineRef.current.style.stroke = "red";
-      lineRef.current.style.strokeWidth = "4px";
-    }
-  }, []);
+  const handleClick = () => {
+    console.log('eiei')
+    posRef.current.endX += 50;
+    lineRef.current?.setAttribute("x2", String(posRef.current.endX));
+  }
 
   return (
-    <svg width="200" height="100" >
+    <svg 
+      width={`${posRef.current.startX - posRef.current.endX}`} 
+      height="2000" 
+      onClick={handleClick} 
+      ref={svgRef}
+    >
       <line
         ref={lineRef}
-        x1={`${pos.current.startX}`}
-        y1={`${pos.current.startY}`}
-        x2={`${pos.current.endX}`}
-        y2={`${pos.current.endY}`}
-        stroke="black"
+        x1={`${posRef.current.startX}`}
+        y1={`${posRef.current.startY}`}
+        x2={`${posRef.current.endX}`}
+        y2={`${posRef.current.endY}`}
+        stroke="red"
         strokeWidth="2"
       />
     </svg>

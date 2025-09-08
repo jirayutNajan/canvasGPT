@@ -1,4 +1,4 @@
-import React, { useRef, useState, type ReactNode } from "react";
+import React, { useRef, type ReactNode } from "react";
 import { useSideBarstore } from "../store/sidebarstore";
 import { useChatCanvas } from "../store/chatstore";
 import ReactMarkdown from 'react-markdown'
@@ -7,6 +7,7 @@ import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import "katex/dist/katex.min.css";
 import SvgLine from "./SvgLine";
+import ZoomButton from "./ZoomButton";
 
 const InfiniteCanvas = () => {
   const { chat } = useChatCanvas();
@@ -41,8 +42,11 @@ const InfiniteCanvas = () => {
   }
   
   const onMouseMove = (e: React.MouseEvent) => {
-    const dx = e.clientX - lastPos.current.x;
-    const dy = e.clientY - lastPos.current.y;
+    console.log(zoomRef.current)
+    console.log(zoomRef.current + 1)
+    let dx = (e.clientX - lastPos.current.x);
+    let dy = (e.clientY - lastPos.current.y);
+
     lastPos.current = { x: e.clientX, y: e.clientY };
 
     if(panning.current) {
@@ -50,25 +54,16 @@ const InfiniteCanvas = () => {
       worldDivRef.current!.style.transform = `translate(${offsetRef.current.x}px, ${offsetRef.current.y}px) scale(${zoomRef.current})`;
     }
     else if (draggingObject.current) {
+      dx *= 1/zoomRef.current;  
+      dy *= 1/zoomRef.current;
+
       const id = draggingObject.current;
       objectsPos.current[id] = {
         x: objectsPos.current[id].x + dx,
         y: objectsPos.current[id].y + dy,
       }
-      objectDivRefs.current[id].style.left = `${objectsPos.current[id].x}px`;
-      objectDivRefs.current[id]!.style.top = `${objectsPos.current[id].y}px`;
+      objectDivRefs.current[id]!.style.transform = `translate(${objectsPos.current[id].x}px, ${objectsPos.current[id].y}px)`
     }
-  }
-
-  const getObjectCenter = (id: number) => {
-    const objDiv = objectDivRefs.current[id];
-    if (objDiv) {
-      const rect = objDiv.getBoundingClientRect();
-      const centerX = objectsPos.current[id].x + rect.width / 2;
-      const centerY = objectsPos.current[id].y + rect.height / 2;
-      return { x: centerX, y: centerY };
-    }
-    return { x: 0, y: 0 };
   }
 
   const onMouseUp = () => {
@@ -94,16 +89,19 @@ const InfiniteCanvas = () => {
     let newScale = zoomRef.current;
     if(e.deltaY < 0) newScale += 0.05;
     else newScale -= 0.05;
-
+    
     newScale = Math.min(Math.max(newScale, 0.2), 1.5);
     zoomRef.current = newScale;
-    worldDivRef.current!.style.transform = `scale(${zoomRef.current}) translate(${offsetRef.current.x}px, ${offsetRef.current.y}px)`;
+
+    worldDivRef.current!.style.transform = 
+      `scale(${zoomRef.current}) translate(${offsetRef.current.x}px, ${offsetRef.current.y}px)`;
     worldDivRef.current!.style.transformOrigin = "center center";
   }
 
   const World = ({ children }: { children: ReactNode }) => {
     return (
       <div
+        // className="pointer-events-none"
         ref={worldDivRef}
       >
         {children}
@@ -113,15 +111,20 @@ const InfiniteCanvas = () => {
 
   return (
     <div 
-      className={`w-full h-screen ${!isSideBarOpen ? "ml-15": "ml-50"} py-4 z-0 overflow-hidden relative`}
+      className={`w-full h-screen ${!isSideBarOpen ? "pl-15": "pl-50"} py-4 -z-10 overflow-hidden absolute`}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
-      onMouseDown={(e) => handleMouseDown(e, "world")}
+      onMouseDown={(e) => {e.preventDefault();handleMouseDown(e, "world")}}
       onWheel={handleWheel}
     >
+      <ZoomButton 
+        zoomRef={zoomRef} 
+        worldDivRef={worldDivRef}
+        offsetRef={offsetRef}
+      />
       {/* World // World คือ canvas นั่นแหละ */}
       <World>
-        <SvgLine />
+        {/* <SvgLine /> */}
         {/* object */}
         {chat.chat_logs?.map((chatLog) => (
           <div
@@ -131,11 +134,10 @@ const InfiniteCanvas = () => {
               }
             }}
             key={chatLog._id}
-            className="max-w-xl bg-[#4c4c4c] absolute flex flex-col gap-1 border-1 border-[#6a6a6a] p-2 rounded-xl
+            className="w-xl bg-[#4c4c4c] absolute flex flex-col gap-1 border-1 border-[#6a6a6a] p-2 rounded-xl
             cursor-grab"
             style={{
-              left: chatLog.position.x,
-              top: chatLog.position.y
+              transform: `translate(${chatLog.position.x}px, ${chatLog.position.y}px)`,
             }}
             onMouseDown={(e) => {
               e.stopPropagation() // กันไม่ให้กดโดน world

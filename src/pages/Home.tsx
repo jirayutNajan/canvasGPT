@@ -37,7 +37,7 @@ export const Home = () => {
     <>
       {!isPending && <InfiniteCanvas />}
       <InputPrompt />
-      <div className="fixed top-3 flex w-full justify-center">http://localhost:5173{url.pathname}</div>
+      <div className="fixed top-10 flex w-full justify-center">http://localhost:5173{url.pathname}</div>
     </>
   )
 }
