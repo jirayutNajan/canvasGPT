@@ -1,5 +1,5 @@
 interface ChatLog {
-  _id: string;
+  _id: number;
   input: string;
   response?: string;
   createdAt?: string;

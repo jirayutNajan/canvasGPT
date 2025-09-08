@@ -1,4 +1,4 @@
-import React, { useRef, type ReactNode } from "react";
+import React, { useRef, useState, type ReactNode } from "react";
 import { useSideBarstore } from "../store/sidebarstore";
 import { useChatCanvas } from "../store/chatstore";
 import ReactMarkdown from 'react-markdown'
@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm'
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import "katex/dist/katex.min.css";
+import SvgLine from "./SvgLine";
 
 const InfiniteCanvas = () => {
   const { chat } = useChatCanvas();
@@ -13,20 +14,22 @@ const InfiniteCanvas = () => {
 
   // state and ref of canvas
   const offsetRef = useRef({ x: 0, y: 0 });
+  const zoomRef = useRef(1);
   const worldDivRef = useRef<HTMLDivElement>(null);
   const lastPos = useRef({ x: 0, y: 0 }); // ตำแหน่ง mouse ล่าสุด ใช้ useRef เพราะแค่เก็บค่า แต่ไม่ต้อง rerender ทำให้ ลื่น
   const panning = useRef(false);
   
   // object on canvas
-  const objectsPos = useRef<{ [id: string]: { x: number, y: number } }>({});
+  const objectsPos = useRef<{ [id: number]: { x: number, y: number } }>({});
+
   // initail objectsPos
   chat.chat_logs?.forEach(log => {
     objectsPos.current[log._id] = { x: log.position.x, y: log.position.y };
   })
-  const draggingObject = useRef<string | null>(null);
+  const draggingObject = useRef<number | null>(null);
   const objectDivRefs = useRef<{ [id: string]: HTMLDivElement}>({});
 
-  const handleMouseDown = (e: React.MouseEvent, type: "world" | "object", id?: string) => {
+  const handleMouseDown = (e: React.MouseEvent, type: "world" | "object", id?: number) => {
     lastPos.current = { x: e.clientX, y: e.clientY };
     if (type == "object") {
       if(!id) return;
@@ -44,7 +47,7 @@ const InfiniteCanvas = () => {
 
     if(panning.current) {
       offsetRef.current = { x: offsetRef.current.x + dx, y: offsetRef.current.y + dy };
-      worldDivRef.current!.style.transform = `translate(${offsetRef.current.x}px, ${offsetRef.current.y}px)`;
+      worldDivRef.current!.style.transform = `translate(${offsetRef.current.x}px, ${offsetRef.current.y}px) scale(${zoomRef.current})`;
     }
     else if (draggingObject.current) {
       const id = draggingObject.current;
@@ -55,6 +58,17 @@ const InfiniteCanvas = () => {
       objectDivRefs.current[id].style.left = `${objectsPos.current[id].x}px`;
       objectDivRefs.current[id]!.style.top = `${objectsPos.current[id].y}px`;
     }
+  }
+
+  const getObjectCenter = (id: number) => {
+    const objDiv = objectDivRefs.current[id];
+    if (objDiv) {
+      const rect = objDiv.getBoundingClientRect();
+      const centerX = objectsPos.current[id].x + rect.width / 2;
+      const centerY = objectsPos.current[id].y + rect.height / 2;
+      return { x: centerX, y: centerY };
+    }
+    return { x: 0, y: 0 };
   }
 
   const onMouseUp = () => {
@@ -76,6 +90,17 @@ const InfiniteCanvas = () => {
     panning.current = false;
   }
 
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    let newScale = zoomRef.current;
+    if(e.deltaY < 0) newScale += 0.05;
+    else newScale -= 0.05;
+
+    newScale = Math.min(Math.max(newScale, 0.2), 1.5);
+    zoomRef.current = newScale;
+    worldDivRef.current!.style.transform = `scale(${zoomRef.current}) translate(${offsetRef.current.x}px, ${offsetRef.current.y}px)`;
+    worldDivRef.current!.style.transformOrigin = "center center";
+  }
+
   const World = ({ children }: { children: ReactNode }) => {
     return (
       <div
@@ -86,41 +111,28 @@ const InfiniteCanvas = () => {
     )
   }
 
-  interface MemoizedMarkdownProps {
-    children?: string;
-  }
-  
-  const MemoizedMarkdown: React.FC<MemoizedMarkdownProps> = React.memo(
-    ({ children }) => {
-      return (
-        <ReactMarkdown
-          children={children}
-          remarkPlugins={[remarkGfm, remarkMath]}
-          rehypePlugins={[rehypeKatex]}
-        />
-      );
-    },
-  );
-
   return (
     <div 
       className={`w-full h-screen ${!isSideBarOpen ? "ml-15": "ml-50"} py-4 z-0 overflow-hidden relative`}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
       onMouseDown={(e) => handleMouseDown(e, "world")}
+      onWheel={handleWheel}
     >
-      <button>Add Text</button>
       {/* World // World คือ canvas นั่นแหละ */}
       <World>
+        <SvgLine />
+        {/* object */}
         {chat.chat_logs?.map((chatLog) => (
           <div
-          ref={(el) => {
-            if (el) {
-              objectDivRefs.current[chatLog._id] = el;
-            }
-          }}
+            ref={(el) => {
+              if (el) {
+                objectDivRefs.current[chatLog._id] = el;
+              }
+            }}
             key={chatLog._id}
-            className="max-w-xl bg-[#4c4c4c] absolute flex flex-col gap-1 border-1 border-[#6a6a6a] p-2 rounded-xl"
+            className="max-w-xl bg-[#4c4c4c] absolute flex flex-col gap-1 border-1 border-[#6a6a6a] p-2 rounded-xl
+            cursor-grab"
             style={{
               left: chatLog.position.x,
               top: chatLog.position.y
@@ -130,16 +142,22 @@ const InfiniteCanvas = () => {
               if(!e.altKey) {
                 handleMouseDown(e, "object", chatLog._id);
               }
-              else {
-                console.log('yes')
-              }
             }}
           >
-            <div className="flex justify-end">
-              <h1 className="flex bg-[#6a6a6a] py-1 px-2 rounded-md">{chatLog.input}</h1>
-            </div>
-            <div>
-              <MemoizedMarkdown children={chatLog.response} />
+            <div 
+              className="cursor-auto"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-end">
+                <h1 className="flex bg-[#6a6a6a] py-1 px-2 rounded-md">{chatLog.input}</h1>
+              </div>
+              <div>
+                <ReactMarkdown
+                  children={chatLog.response}
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
+                />
+              </div>
             </div>
           </div>
         ))}
