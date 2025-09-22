@@ -4,14 +4,17 @@ interface ChatLog {
   response?: string;
   createdAt?: string;
   position: {x: number, y: number};
-  refers?: {_id: string}[]; // array or string or Array<{id: string}>
+  refers?: number; // array or string or Array<{id: string}>
 }
+
+//todo ทำ width height ของ chatlog
 
 interface Chat {
   _id?: string;
   $loki?: string;
   name: string;
   chat_logs?: ChatLog[];
+  offset?: { x: number, y: number };// TODO set offset
 }
 
 interface Window {

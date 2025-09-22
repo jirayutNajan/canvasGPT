@@ -1,4 +1,4 @@
-import React, { useRef, type ReactNode } from "react";
+import React, { useRef, useState, type ReactNode, useEffect } from "react";
 import { useSideBarstore } from "../store/sidebarstore";
 import { useChatCanvas } from "../store/chatstore";
 import ReactMarkdown from 'react-markdown'
@@ -12,6 +12,7 @@ import ZoomButton from "./ZoomButton";
 const InfiniteCanvas = () => {
   const { chat } = useChatCanvas();
   const { isOpen: isSideBarOpen } = useSideBarstore();
+  const [mounted, setMounted] = useState(false);
 
   // state and ref of canvas
   const offsetRef = useRef({ x: 0, y: 0 });
@@ -42,8 +43,6 @@ const InfiniteCanvas = () => {
   }
   
   const onMouseMove = (e: React.MouseEvent) => {
-    console.log(zoomRef.current)
-    console.log(zoomRef.current + 1)
     let dx = (e.clientX - lastPos.current.x);
     let dy = (e.clientY - lastPos.current.y);
 
@@ -54,14 +53,16 @@ const InfiniteCanvas = () => {
       worldDivRef.current!.style.transform = `translate(${offsetRef.current.x}px, ${offsetRef.current.y}px) scale(${zoomRef.current})`;
     }
     else if (draggingObject.current) {
+      const id = draggingObject.current;
       dx *= 1/zoomRef.current;  
       dy *= 1/zoomRef.current;
 
-      const id = draggingObject.current;
+
       objectsPos.current[id] = {
         x: objectsPos.current[id].x + dx,
         y: objectsPos.current[id].y + dy,
       }
+
       objectDivRefs.current[id]!.style.transform = `translate(${objectsPos.current[id].x}px, ${objectsPos.current[id].y}px)`
     }
   }
@@ -97,17 +98,23 @@ const InfiniteCanvas = () => {
       `scale(${zoomRef.current}) translate(${offsetRef.current.x}px, ${offsetRef.current.y}px)`;
     worldDivRef.current!.style.transformOrigin = "center center";
   }
-
+  
   const World = ({ children }: { children: ReactNode }) => {
     return (
       <div
-        // className="pointer-events-none"
         ref={worldDivRef}
       >
         {children}
       </div>
     )
   }
+
+  useEffect(() => {
+    setMounted(true);
+  }, [])
+
+  // TODO แยก object เป็นอีก component
+  // TODO rerender svg
 
   return (
     <div 
@@ -124,41 +131,50 @@ const InfiniteCanvas = () => {
       />
       {/* World // World คือ canvas นั่นแหละ */}
       <World>
-        {/* <SvgLine /> */}
         {/* object */}
         {chat.chat_logs?.map((chatLog) => (
-          <div
-            ref={(el) => {
-              if (el) {
-                objectDivRefs.current[chatLog._id] = el;
-              }
-            }}
-            key={chatLog._id}
-            className="w-xl bg-[#4c4c4c] absolute flex flex-col gap-1 border-1 border-[#6a6a6a] p-2 rounded-xl
-            cursor-grab"
-            style={{
-              transform: `translate(${chatLog.position.x}px, ${chatLog.position.y}px)`,
-            }}
-            onMouseDown={(e) => {
-              e.stopPropagation() // กันไม่ให้กดโดน world
-              if(!e.altKey) {
-                handleMouseDown(e, "object", chatLog._id);
-              }
-            }}
-          >
-            <div 
-              className="cursor-auto"
-              onMouseDown={(e) => e.stopPropagation()}
+          <div key={chatLog._id}>
+            <div
+              ref={(el) => {
+                if (el) {
+                  objectDivRefs.current[chatLog._id] = el;
+                }
+              }}
+              className="w-[600px] bg-[#4c4c4c] flex flex-col gap-1 border-1 border-[#6a6a6a] p-2 rounded-xl
+              cursor-grab select-none absolute"
+              style={{
+                transform: `translate(${chatLog.position.x}px, ${chatLog.position.y}px)`,
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation() // กันไม่ให้กดโดน world
+                if(!e.altKey) {
+                  handleMouseDown(e, "object", chatLog._id);
+                }
+              }}
             >
-              <div className="flex justify-end">
-                <h1 className="flex bg-[#6a6a6a] py-1 px-2 rounded-md">{chatLog.input}</h1>
-              </div>
-              <div>
-                <ReactMarkdown
-                  children={chatLog.response}
-                  remarkPlugins={[remarkGfm, remarkMath]}
-                  rehypePlugins={[rehypeKatex]}
+              {chatLog?.refers && (
+                <SvgLine 
+                  key={chatLog._id}
+                  objectPos = {objectsPos.current[chatLog._id]}
+                  toPos={objectsPos.current[chatLog?.refers]}
+                  toHeight={objectDivRefs.current[chatLog.refers]?.offsetHeight}
                 />
+                )
+              }
+              <div 
+                className="cursor-auto"
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <div className="flex justify-end select-text">
+                  <h1 className="flex bg-[#6a6a6a] py-1 px-2 rounded-md">{chatLog.input}</h1>
+                </div>
+                <div className="select-text">
+                  <ReactMarkdown
+                    children={chatLog.response}
+                    remarkPlugins={[remarkGfm, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                  />
+                </div>
               </div>
             </div>
           </div>
