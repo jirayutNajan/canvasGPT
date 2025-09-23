@@ -1,0 +1,90 @@
+import React, { memo, useState } from "react";
+import SvgLine from "./SvgLine";
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
+import "katex/dist/katex.min.css";
+import { forwardRef } from "react";
+
+const ChatBox = forwardRef<
+  HTMLDivElement, 
+  { 
+    chatLog: ChatLog;
+    handleMouseDown: (e: React.MouseEvent, type: "world" | "object", id?: number) => void;
+    objectsPos: React.RefObject<{ [id: number]: { x: number; y: number } }>
+    objectDivRefs: React.RefObject<{ [id: string]: HTMLDivElement }>
+  }
+  >(({ 
+    chatLog, 
+    handleMouseDown,
+    objectsPos,
+    objectDivRefs
+  }, ref ) => {
+
+  const handleReply = () => {
+    console.log('heere')
+  }
+
+  return (
+    <div
+      ref={ref}
+      className="w-[600px] bg-[#4c4c4c] flex flex-col gap-1 border-1 border-[#6a6a6a] hover:border-[#d3d3d3] p-2 rounded-xl
+      cursor-grab select-none absolute transition-colors duration-75 group"
+      style={{
+        transform: `translate(${chatLog.position.x}px, ${chatLog.position.y}px)`,
+      }}
+      
+      onMouseDown={(e) => {
+        e.stopPropagation() // กันไม่ให้กดโดน world
+        if(!e.altKey) {
+          handleMouseDown(e, "object", chatLog._id);
+        }
+      }}
+    >
+      {chatLog?.refers && (
+        <SvgLine 
+          key={chatLog._id}
+          objectPos = {objectsPos.current[chatLog._id]}
+          toPos={objectsPos.current[chatLog?.refers]}
+          toHeight={objectDivRefs.current[chatLog.refers]?.offsetHeight}
+        />
+        )
+      }
+      <div className="absolute bottom-0 w-full justify-center items-center z-50 hidden group-hover:flex cursor-pointer 
+      pointer-events-none">
+        <div 
+          className="rounded-full bg-[#515151] size-14 translate-y-[50%] flex justify-center items-center
+          border-1 border-[#d3d3d3] z-50 hover:bg-[#3a3a3a] transition-colors duration-75 pointer-events-auto
+          active:bg-[#292929]"
+          onClick={handleReply}
+        >
+          +
+        </div>
+      </div>
+      <div 
+        className="cursor-auto"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-end select-text">
+          <h1 className="flex bg-[#6a6a6a] py-1 px-2 rounded-md">{chatLog.input}</h1>
+        </div>
+        <div className="select-text">
+          <ChatReply response={chatLog.response} />
+        </div>
+      </div>
+    </div>
+  )
+})
+
+export default ChatBox
+
+const ChatReply = memo(({ response }: { response?: string }) => {
+  return (
+    <ReactMarkdown
+      children={response}
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[rehypeKatex]}
+    />
+  )
+})

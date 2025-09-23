@@ -23,7 +23,7 @@ export default function SvgLine(
       style={{
         transform: `translate(300px, -${height + 9}px)`,
       }}
-      className="absolute cursor-auto pointer-events-none"
+      className="absolute cursor-auto pointer-events-none z-10"
       onMouseDown={(e) => e.stopPropagation()}
     >
       <path
