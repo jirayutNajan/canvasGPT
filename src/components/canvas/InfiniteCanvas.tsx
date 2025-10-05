@@ -10,8 +10,8 @@ const InfiniteCanvas = () => {
   const [mounted, setMounted] = useState(false);
 
   // state and ref of canvas
-  const offsetRef = useRef({ x: 0, y: 0 });
-  const zoomRef = useRef(1);
+  const offsetRef = useRef({ x: chat.offset?.x || 0, y: chat.offset?.y || 0 });
+  const zoomRef = useRef(chat?.zoomScale || 1);
   const worldDivRef = useRef<HTMLDivElement>(null);
   const lastPos = useRef({ x: 0, y: 0 }); // ตำแหน่ง mouse ล่าสุด ใช้ useRef เพราะแค่เก็บค่า แต่ไม่ต้อง rerender ทำให้ ลื่น
   const panning = useRef(false);
@@ -77,6 +77,7 @@ const InfiniteCanvas = () => {
       }
       window.chat.updateChat(updatedXYChat);
     }
+    window.chat.updateChat({...chat, offset: offsetRef.current })
     draggingObject.current = null;
     panning.current = false;
   }
@@ -92,6 +93,8 @@ const InfiniteCanvas = () => {
     worldDivRef.current!.style.transform = 
       `scale(${zoomRef.current}) translate(${offsetRef.current.x}px, ${offsetRef.current.y}px)`;
     worldDivRef.current!.style.transformOrigin = "center center";
+
+    window.chat.updateChat({...chat, zoomScale: zoomRef.current })
   }
   
   const World = ({ children }: { children: ReactNode }) => { 

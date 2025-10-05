@@ -22,15 +22,15 @@ export const Home = () => {
           setChat(chat)
         }
         else {
-          setChat({ name: "", chat_logs: [] })
+          setChat({ name: "", chat_logs: []})
           navigate('/');
         }
 
         return chat
       }
       else {
-        setChat({ name: "", chat_logs: [] });
-        return ({ name: "", chat_logs: [] })
+        setChat({ name: "", chat_logs: []});
+        return ({ name: "", chat_logs: []})
       }
     }
   })

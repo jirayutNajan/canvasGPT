@@ -8,7 +8,7 @@ interface Window {
     getChat: (_id: string) => Promise<Chat>;
     addChat: (chat: Chat) => Promise<Chat>;   // คืน Chat ที่เพิ่มแล้ว
     updateChat: (chat: Chat) => Promise<Chat | null>; // คืน Chat ที่ update หรือ null ถ้าไม่เจอ
-    updateChatXY: (chat: Chat) => Promise<Chat | null>; 
+    updateChatNotSave: (chat: Chat) => Promise<Chat | null>; 
     deleteChat: (_id: string) => Promise<boolean>; // คืน true/false
   }
 }

@@ -15,4 +15,5 @@ export interface Chat {
   name: string;
   chat_logs?: ChatLog[];
   offset?: { x: number, y: number };
+  zoomScale?: number;
 }
