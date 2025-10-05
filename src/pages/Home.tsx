@@ -1,8 +1,10 @@
 import { useLocation, useNavigate, useParams } from "react-router-dom"
-import InfiniteCanvas from "../components/InfiniteCanvas"
-import InputPrompt from "../components/InputPrompt";
+import InfiniteCanvas from "../components/canvas/InfiniteCanvas";
+import InputPrompt from "../components/ui/InputPrompt";
 import { useChatCanvas } from "../store/chatstore";
 import { useQuery } from "@tanstack/react-query";
+
+import type { Chat } from "../interface/ChatInterface";
 
 export const Home = () => {
   const { id: chatId } = useParams();

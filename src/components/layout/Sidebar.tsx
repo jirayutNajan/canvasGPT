@@ -1,7 +1,9 @@
 import { IoMdAdd } from "react-icons/io"
-import { useSideBarstore } from "../store/sidebarstore";
+import { useSideBarstore } from "../../store/sidebarstore";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+
+import type { Chat } from "../../interface/ChatInterface";
 
 const Sidebar = () => {
   // TODO toggle sidebar

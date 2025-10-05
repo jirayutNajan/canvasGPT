@@ -1,8 +1,8 @@
 import { Outlet } from "react-router-dom"
 import { useEffect } from "react"
 import Sidebar from "./Sidebar"
-import { useApiStore } from "../store/hasapistore"
-import ApiKey from "./ApiKey"
+import { useApiStore } from "../../store/hasapistore"
+import ApiKey from "../ui/ApiKey"
 
 const Layout = () => {
   const {hasApi, setHasApi} = useApiStore();

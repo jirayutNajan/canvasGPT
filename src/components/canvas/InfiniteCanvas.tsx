@@ -1,6 +1,6 @@
 import React, { useRef, useState, type ReactNode, useEffect } from "react";
-import { useSideBarstore } from "../store/sidebarstore";
-import { useChatCanvas } from "../store/chatstore";
+import { useSideBarstore } from "../../store/sidebarstore";
+import { useChatCanvas } from "../../store/chatstore";
 import ZoomButton from "./ZoomButton";
 import ChatBox from "./ChatBox";
 
@@ -94,22 +94,23 @@ const InfiniteCanvas = () => {
     worldDivRef.current!.style.transformOrigin = "center center";
   }
   
-  const World = ({ children }: { children: ReactNode }) => {
-    return (
-      <div
-        ref={worldDivRef}
+  const World = ({ children }: { children: ReactNode }) => { 
+    return ( 
+      <div 
+        ref={worldDivRef} 
+        style={{
+          transform: `translate(${offsetRef.current.x}px, ${offsetRef.current.y}px) scale(${zoomRef.current})`
+        }}
       >
-        {children}
-      </div>
-    )
+        {children} 
+      </div> ) 
   }
 
   useEffect(() => {
     setMounted(true);
   }, [])
 
-  // TODO แยก object เป็นอีก component
-  // TODO rerender svg
+  // console.log("first page rerender");
 
   return (
     <div 
@@ -137,6 +138,7 @@ const InfiniteCanvas = () => {
             handleMouseDown={handleMouseDown}
             objectDivRefs={objectDivRefs}
             objectsPos={objectsPos}
+            // handleChatReply={handleChatReply}
           />
         ))}
       </World>

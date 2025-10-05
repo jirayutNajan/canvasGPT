@@ -6,6 +6,8 @@ import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import "katex/dist/katex.min.css";
 import { forwardRef } from "react";
+import type { ChatLog } from "../../interface/ChatInterface";
+import { useReplyChatStore } from "../../store/replychatstore";
 
 const ChatBox = forwardRef<
   HTMLDivElement, 
@@ -19,18 +21,33 @@ const ChatBox = forwardRef<
     chatLog, 
     handleMouseDown,
     objectsPos,
-    objectDivRefs
+    objectDivRefs,
   }, ref ) => {
+  // กันไม่ใช้ component นี้ตัวอื่นๆที่ subscribe เหมือนกัน rerender ด้วย
+  const setReplyChatId = useReplyChatStore((s) => s.setReplyChatId);
+  const setReplyChatText = useReplyChatStore((s) => s.setReplyChatText);
+
+  const [isReply, setIsReply] = useState(false);
 
   const handleReply = () => {
-    console.log('heere')
+    setIsReply(!isReply);
+    if(!isReply) {
+      setReplyChatId(chatLog._id);
+      setReplyChatText(chatLog.response?.slice(0, 70) || "")
+    }
+    else {
+      setReplyChatId(null);
+      setReplyChatText("")
+    }
   }
+
+  // console.log('re1', chatLog._id)
 
   return (
     <div
       ref={ref}
-      className="w-[600px] bg-[#4c4c4c] flex flex-col gap-1 border-1 border-[#6a6a6a] hover:border-[#d3d3d3] p-2 rounded-xl
-      cursor-grab select-none absolute transition-colors duration-75 group"
+      className={`w-[600px] bg-[#4c4c4c] flex flex-col gap-1 border-1 border-[#6a6a6a] hover:border-[#d3d3d3] p-2 rounded-xl
+      cursor-grab select-none absolute transition-colors duration-75 group ${isReply && "border-2 border-white"}`}
       style={{
         transform: `translate(${chatLog.position.x}px, ${chatLog.position.y}px)`,
       }}
@@ -55,8 +72,8 @@ const ChatBox = forwardRef<
       pointer-events-none">
         <div 
           className="rounded-full bg-[#515151] size-14 translate-y-[50%] flex justify-center items-center
-          border-1 border-[#d3d3d3] z-50 hover:bg-[#3a3a3a] transition-colors duration-75 pointer-events-auto
-          active:bg-[#292929]"
+          border-2 border-[#d3d3d3] z-50 hover:bg-[#3a3a3a] transition-colors duration-75 pointer-events-auto
+          active:bg-[#292929] text-3xl"
           onClick={handleReply}
         >
           +
@@ -80,6 +97,7 @@ const ChatBox = forwardRef<
 export default ChatBox
 
 const ChatReply = memo(({ response }: { response?: string }) => {
+  // console.log('re2 mark')
   return (
     <ReactMarkdown
       children={response}
