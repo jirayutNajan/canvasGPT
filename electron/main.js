@@ -94,9 +94,8 @@ ipcMain.handle('chats-update', (_evt, chat) => {
   const existing = chats.findOne({ $loki: Number(chat.$loki) });
   if(!existing) return null;
   Object.assign(existing, chat);
-  chats.update(existing);
+  chats.update(existing)
   db.saveDatabase();
-  return existing;
 })
 
 ipcMain.handle('chats-update-not-save', (_evt, chat) => {

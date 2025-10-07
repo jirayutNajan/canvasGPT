@@ -3,9 +3,10 @@ import { useSideBarstore } from "../../store/sidebarstore";
 import { useChatCanvas } from "../../store/chatstore";
 import ZoomButton from "./ZoomButton";
 import ChatBox from "./ChatBox";
+import type { Chat, ChatLog } from "../../interface/ChatInterface";
 
 const InfiniteCanvas = () => {
-  const { chat } = useChatCanvas();
+  const { chat, setChat } = useChatCanvas();
   const { isOpen: isSideBarOpen } = useSideBarstore();
   const [mounted, setMounted] = useState(false);
 
@@ -62,9 +63,11 @@ const InfiniteCanvas = () => {
     }
   }
 
-  const onMouseUp = () => {
+  const onMouseUp = async () => {
     if(draggingObject.current) {
-      const updatedXYChat = 
+      // console.log(objectsPos.current[draggingObject.current])
+      // console.log(chat)
+      const updatedXYChat: Chat = 
       { ...chat, 
         chat_logs: chat.chat_logs?.map((c) => 
           c._id === draggingObject.current ? 
@@ -75,9 +78,21 @@ const InfiniteCanvas = () => {
           : c 
         ) 
       }
-      window.chat.updateChat(updatedXYChat);
+
+      // setChat(updatedXYChat);
+      // ไม่ต้อง setChat แล้วเปลียนเป็น updatechatxy เพิ่มใน mian
+      // แยก addchatlog ของ input prompt
+      // not save เปลี่ยนชื่อเป็น offset กับ scale
+
+      // ทำ svg -> svg realtime useref -> แก้อันนี้ -> แก้ store ทั้งหมดของ inputprompt
+      console.log('here')
+      setChat(updatedXYChat)
+      window.chat.updateChat(updatedXYChat)
     }
-    window.chat.updateChat({...chat, offset: offsetRef.current })
+    else {
+      window.chat.updateChatNotSave({...chat, offset: offsetRef.current })
+    }
+
     draggingObject.current = null;
     panning.current = false;
   }
@@ -94,7 +109,7 @@ const InfiniteCanvas = () => {
       `scale(${zoomRef.current}) translate(${offsetRef.current.x}px, ${offsetRef.current.y}px)`;
     worldDivRef.current!.style.transformOrigin = "center center";
 
-    window.chat.updateChat({...chat, zoomScale: zoomRef.current })
+    window.chat.updateChatNotSave({...chat, zoomScale: zoomRef.current })
   }
   
   const World = ({ children }: { children: ReactNode }) => { 
@@ -138,6 +153,7 @@ const InfiniteCanvas = () => {
             ref={(el) => {
               if (el) objectDivRefs.current[chatLog._id] = el
             }}
+            objectHeight={objectDivRefs.current[chatLog._id]?.offsetHeight}
             handleMouseDown={handleMouseDown}
             objectDivRefs={objectDivRefs}
             objectsPos={objectsPos}

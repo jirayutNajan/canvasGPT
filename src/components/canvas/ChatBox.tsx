@@ -1,4 +1,4 @@
-import React, { memo, useState } from "react";
+import React, { memo, useRef, useState } from "react";
 import SvgLine from "./SvgLine";
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -16,20 +16,24 @@ const ChatBox = forwardRef<
     handleMouseDown: (e: React.MouseEvent, type: "world" | "object", id?: number) => void;
     objectsPos: React.RefObject<{ [id: number]: { x: number; y: number } }>
     objectDivRefs: React.RefObject<{ [id: string]: HTMLDivElement }>
+    objectHeight: number
   }
   >(({ 
     chatLog, 
     handleMouseDown,
     objectsPos,
     objectDivRefs,
+    objectHeight
   }, ref ) => {
   // กันไม่ใช้ component นี้ตัวอื่นๆที่ subscribe เหมือนกัน rerender ด้วย
+
   const setReplyChatId = useReplyChatStore((s) => s.setReplyChatId);
   const setReplyChatText = useReplyChatStore((s) => s.setReplyChatText);
 
   const [isReply, setIsReply] = useState(false);
 
-  const handleReply = () => {
+  const handleReply = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
     setIsReply(!isReply);
     if(!isReply) {
       setReplyChatId(chatLog._id);
@@ -41,7 +45,7 @@ const ChatBox = forwardRef<
     }
   }
 
-  // console.log('re1', chatLog._id)
+  console.log('re1', chatLog._id)
 
   return (
     <div
@@ -62,7 +66,8 @@ const ChatBox = forwardRef<
       {chatLog?.refers && (
         <SvgLine 
           key={chatLog._id}
-          objectPos = {objectsPos.current[chatLog._id]}
+          objectPos={objectsPos.current[chatLog._id]}
+          objectHeight={objectHeight}
           toPos={objectsPos.current[chatLog?.refers]}
           toHeight={objectDivRefs.current[chatLog.refers]?.offsetHeight}
         />
@@ -74,7 +79,8 @@ const ChatBox = forwardRef<
           className="rounded-full bg-[#515151] size-14 translate-y-[50%] flex justify-center items-center
           border-2 border-[#d3d3d3] z-50 hover:bg-[#3a3a3a] transition-colors duration-75 pointer-events-auto
           active:bg-[#292929] text-3xl"
-          onClick={handleReply}
+          onMouseDown={(e) => e.stopPropagation()} // กัน onmousedown ข้างบน
+          onClick={(handleReply)}
         >
           +
         </div>
@@ -97,7 +103,7 @@ const ChatBox = forwardRef<
 export default ChatBox
 
 const ChatReply = memo(({ response }: { response?: string }) => {
-  // console.log('re2 mark')
+  console.log('re2 mark')
   return (
     <ReactMarkdown
       children={response}

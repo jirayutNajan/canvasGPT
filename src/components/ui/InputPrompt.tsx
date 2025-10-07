@@ -33,8 +33,6 @@ const InputPrompt = () => {
         refers: replyChatId || undefined
       }
 
-      console.log(dummyChatLog)
-
       addChatLog(dummyChatLog)
       
       // TODO ย้่ายโค้ดนี้ไปที่ store

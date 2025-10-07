@@ -14,7 +14,7 @@ contextBridge.exposeInMainWorld('chat', {
   getChats: () => ipcRenderer.invoke('chats-get'),
   getChat: (_id) => ipcRenderer.invoke('chats-getOne', _id),
   addChat: (chat) => ipcRenderer.invoke('chats-add', chat),
-  updateChat: (chat) => ipcRenderer.invoke('chats-update', chat),
+  updateChat: (id, pos) => ipcRenderer.invoke('chats-update', id, pos),
   updateChatNotSave: (chat) => ipcRenderer.invoke('chats-update-not-save', chat),
   deleteChat: (_id) => ipcRenderer.invoke('chats-delete', _id)
 });
