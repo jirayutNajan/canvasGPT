@@ -1,36 +1,38 @@
-import React, { memo, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import SvgLine from "./SvgLine";
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import "katex/dist/katex.min.css";
-import { forwardRef } from "react";
 import type { ChatLog } from "../../interface/ChatInterface";
 import { useReplyChatStore } from "../../store/replychatstore";
 
-const ChatBox = forwardRef<
-  HTMLDivElement, 
-  { 
-    chatLog: ChatLog;
-    handleMouseDown: (e: React.MouseEvent, type: "world" | "object", id?: number) => void;
-    objectsPos: React.RefObject<{ [id: number]: { x: number; y: number } }>
-    objectDivRefs: React.RefObject<{ [id: string]: HTMLDivElement }>
-    objectHeight: number
-    setSvgRefs: (id: number, ref: SVGSVGElement) => void,
-    setPathRefs: (id: number, ref: SVGPathElement) => void,
-    setObjectRefs: (id: number, chatBoxRef: HTMLDivElement, svg: SVGSVGElement | null, path: SVGPathElement | null) => void
-  }
-  >(({ 
+export default function ChatBox(
+{ 
     chatLog, 
     handleMouseDown,
-    objectsPos,
-    objectDivRefs,
-    objectHeight,
-    setSvgRefs,
-    setPathRefs,
+    // objectsPos,
+    // objectDivRefs,
+    // objectHeight,
+    // setSvgRefs,
+    // setPathRefs,
     setObjectRefs
-  }, ref ) => {
+  }: 
+  {
+    chatLog: ChatLog,
+    handleMouseDown: (e: React.MouseEvent, type: "world" | "object", id?: number) => void,
+    // objectsPos: React.RefObject<{ [id: number]: { x: number; y: number } }>,
+    // objectDivRefs: React.RefObject<{ [id: string]: HTMLDivElement }>
+    // objectHeight: number
+    // setSvgRefs: (id: number, ref: SVGSVGElement) => void,
+    // setPathRefs: (id: number, ref: SVGPathElement) => void,
+    setObjectRefs: (
+      {id, chatBoxRef, svg, path}: 
+      {id: number, chatBoxRef: HTMLDivElement, svg: SVGSVGElement | null, path: SVGPathElement | null}
+    ) => void,
+  }) 
+  {
   // กันไม่ใช้ component นี้ตัวอื่นๆที่ subscribe เหมือนกัน rerender ด้วย
 
   const setReplyChatId = useReplyChatStore((s) => s.setReplyChatId);
@@ -38,6 +40,20 @@ const ChatBox = forwardRef<
 
   const [isReply, setIsReply] = useState(false);
 
+  const chatBoxDivRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
+
+  useEffect(() => {
+    if(chatBoxDivRef.current) {
+      setObjectRefs({ 
+        id: chatLog._id, 
+        chatBoxRef: chatBoxDivRef.current,
+        svg: svgRef.current,
+        path: pathRef.current
+      })
+    }
+  }, [])
 
   const handleReply = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
@@ -52,19 +68,27 @@ const ChatBox = forwardRef<
     }
   }
 
-  const setSvgRef = (ref: SVGSVGElement) => {
-    setSvgRefs(chatLog._id, ref)
-  }
-
-  const setPathRef = (ref: SVGPathElement) => {
-    setPathRefs(chatLog._id, ref)
+  const setSvgAndPathRef = (svg: SVGSVGElement, path: SVGPathElement) => {
+    svgRef.current = svg
+    pathRef.current = path
   }
 
   // console.log('re', chatLog._id)
 
+  const ChatReply = memo(({ response }: { response?: string }) => {
+    // console.log('re mark')
+    return (
+      <ReactMarkdown
+        children={response}
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+      />
+    )
+  })
+
   return (
     <div
-      ref={ref}
+      ref={chatBoxDivRef}
       className={`w-[600px] bg-[#4c4c4c] flex flex-col gap-1 border-1 border-[#6a6a6a] hover:border-[#d3d3d3] p-2 rounded-xl
       cursor-grab select-none absolute transition-colors duration-75 group ${isReply && "border-2 border-white"}`}
       style={{
@@ -81,12 +105,13 @@ const ChatBox = forwardRef<
       {chatLog?.refers && (
         <SvgLine 
           key={chatLog._id}
-          objectPos={objectsPos.current[chatLog._id]}
-          objectHeight={objectHeight}
-          toPos={objectsPos.current[chatLog?.refers]}
-          toHeight={objectDivRefs.current[chatLog.refers]?.offsetHeight}
-          setSvgRef={setSvgRef}
-          setPathRef={setPathRef}
+          // objectPos={objectsPos.current[chatLog._id]}
+          // objectHeight={objectHeight}
+          // toPos={objectsPos.current[chatLog?.refers]}
+          // toHeight={objectDivRefs.current[chatLog.refers]?.offsetHeight}
+          // setSvgRef={setSvgRef}
+          // setPathRef={setPathRef}
+          setSvgAndPathRef={setSvgAndPathRef}
         />
         )
       }
@@ -115,17 +140,4 @@ const ChatBox = forwardRef<
       </div>
     </div>
   )
-})
-
-export default ChatBox
-
-const ChatReply = memo(({ response }: { response?: string }) => {
-  // console.log('re mark')
-  return (
-    <ReactMarkdown
-      children={response}
-      remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[rehypeKatex]}
-    />
-  )
-})
+}

@@ -24,34 +24,35 @@ const InfiniteCanvas = () => {
     objectsPos.current[log._id] = { x: log.position.x, y: log.position.y };
   })
 
-  const objectDivRefs = useRef<{ [id: number]: HTMLDivElement}>({});
+  // const objectDivRefs = useRef<{ [id: number]: HTMLDivElement}>({});
   const draggingObject = useRef<number | null>(null);
-  const svgRefs = useRef<{ [id: number]: SVGSVGElement }>({})
-  const pathRefs = useRef<{ [id: number]: SVGPathElement }>({})
+  // const svgRefs = useRef<{ [id: number]: SVGSVGElement }>({})
+  // const pathRefs = useRef<{ [id: number]: SVGPathElement }>({})
 
-  const objectRefs = useRef<{
-    [id: number]: {
-      chatBox: HTMLDivElement,
-      svg: SVGSVGElement | null,
-      path: SVGPathElement | null
-    }
+  const objectsRefs = useRef<{ 
+    [id: number]: { chatBox: HTMLDivElement | null, svg: SVGSVGElement | null, path: SVGPathElement | null }
   }>({});
 
-  const setObjectRefs = (id: number, chatBoxRef: HTMLDivElement, svg: SVGSVGElement | null, path: SVGPathElement | null) => {
-    objectRefs.current[id] = {
+  const setObjectRefs = (
+    {id, chatBoxRef, svg, path}: 
+    {id: number, chatBoxRef: HTMLDivElement, svg: SVGSVGElement | null, path: SVGPathElement | null}
+  ) => {
+    objectsRefs.current[id] = {
       chatBox: chatBoxRef,
       svg: svg,
       path: path
     }
   }
 
-  const setSvgRefs = (id: number, ref: SVGSVGElement) => {
-    svgRefs.current[id] = ref
-  }
+  console.log(objectsRefs)
 
-  const setPathRefs = (id: number, ref: SVGPathElement) => {
-    pathRefs.current[id] = ref
-  }
+  // const setSvgRefs = (id: number, ref: SVGSVGElement) => {
+  //   svgRefs.current[id] = ref
+  // }
+
+  // const setPathRefs = (id: number, ref: SVGPathElement) => {
+  //   pathRefs.current[id] = ref
+  // }
 
   const handleMouseDown = (e: React.MouseEvent, type: "world" | "object", id?: number) => {
     lastPos.current = { x: e.clientX, y: e.clientY };
@@ -84,7 +85,10 @@ const InfiniteCanvas = () => {
         y: objectsPos.current[id].y + dy,
       }
 
-      objectDivRefs.current[id]!.style.transform = `translate(${objectsPos.current[id].x}px, ${objectsPos.current[id].y}px)`
+      // objectDivRefs.current[id]!.style.transform = `translate(${objectsPos.current[id].x}px, ${objectsPos.current[id].y}px)`
+      if(objectsRefs.current[id].chatBox) {
+        objectsRefs.current[id].chatBox.style.transform = `translate(${objectsPos.current[id].x}px, ${objectsPos.current[id].y}px)`
+      }
     }
   }
 
@@ -117,10 +121,10 @@ const InfiniteCanvas = () => {
       // setChat(updatedXYChat)
       window.chat.updateChat(updatedXYChat)
       // pathRefs.current[draggingObject.current].style.stroke = "red"
-      const svg = svgRefs.current[draggingObject.current]
-      if(svg) {
-        svg.querySelector("path")!.style.stroke = "red" 
-      }
+      // const svg = svgRefs.current[draggingObject.current]
+      // if(svg) {
+      //   svg.querySelector("path")!.style.stroke = "red" 
+      // }
     }
     else {
       window.chat.updateChatNotSave({...chat, offset: offsetRef.current })
@@ -183,15 +187,15 @@ const InfiniteCanvas = () => {
           <ChatBox 
             chatLog={chatLog} 
             key={chatLog._id} 
-            ref={(el) => {
-              if (el) objectDivRefs.current[chatLog._id] = el
-            }}
-            objectHeight={objectDivRefs.current[chatLog._id]?.offsetHeight}
+            // ref={(el) => {
+            //   if (el) objectDivRefs.current[chatLog._id] = el
+            // }}
+            // objectHeight={objectDivRefs.current[chatLog._id]?.offsetHeight}
             handleMouseDown={handleMouseDown}
-            objectDivRefs={objectDivRefs}
-            objectsPos={objectsPos}
-            setSvgRefs={setSvgRefs}
-            setPathRefs={setPathRefs}
+            // objectDivRefs={objectDivRefs}
+            // objectsPos={objectsPos}
+            // setSvgRefs={setSvgRefs}
+            // setPathRefs={setPathRefs}
             setObjectRefs={setObjectRefs}
           />
         ))}
