@@ -1,18 +1,28 @@
+import { useEffect, useRef, type RefObject } from "react";
+
 export default function SvgLine(
   { 
     objectPos, 
     toPos, 
     toHeight,
-    objectHeight
+    objectHeight,
+    setSvgRef,
+    setPathRef
   }: 
   { 
     objectPos: { x: number, y: number }, 
     toPos: { x: number, y: number }, 
     toHeight?: number,
-    objectHeight: number
+    objectHeight: number,
+    setSvgRef: (ref: SVGSVGElement) => void,
+    setPathRef: (ref: SVGPathElement) => void
   }) 
   {
-    let pos: "tl" | "tr" | "bl" | "br"
+
+  const svgRef = useRef<SVGSVGElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
+
+  let pos: "tl" | "tr" | "bl" | "br"
 
   if(!toHeight) toHeight = 0;
   const width = Math.abs(objectPos.x - toPos.x);
@@ -61,8 +71,18 @@ export default function SvgLine(
     `
   }
 
+  useEffect(() => {
+    if(svgRef.current && pathRef.current) {
+      setSvgRef(svgRef.current)
+      setPathRef(pathRef.current)
+    }
+  }, [])
+
+  // console.log('re svg')
+
   return (
     <svg 
+      ref={svgRef}
       width={width}
       height={height}
       style={{
@@ -70,8 +90,9 @@ export default function SvgLine(
       }}
       className="absolute cursor-auto pointer-events-none z-10"
       onMouseDown={(e) => e.stopPropagation()}
-    >
+      >
       <path
+        ref={pathRef}
         d={path}
         stroke="#2b2b2b"
         strokeWidth="2"

@@ -19,13 +19,39 @@ const InfiniteCanvas = () => {
   
   // object on canvas
   const objectsPos = useRef<{ [id: number]: { x: number, y: number } }>({});
-
   // initail objectsPos
   chat.chat_logs?.forEach(log => {
     objectsPos.current[log._id] = { x: log.position.x, y: log.position.y };
   })
+
+  const objectDivRefs = useRef<{ [id: number]: HTMLDivElement}>({});
   const draggingObject = useRef<number | null>(null);
-  const objectDivRefs = useRef<{ [id: string]: HTMLDivElement}>({});
+  const svgRefs = useRef<{ [id: number]: SVGSVGElement }>({})
+  const pathRefs = useRef<{ [id: number]: SVGPathElement }>({})
+
+  const objectRefs = useRef<{
+    [id: number]: {
+      chatBox: HTMLDivElement,
+      svg: SVGSVGElement | null,
+      path: SVGPathElement | null
+    }
+  }>({});
+
+  const setObjectRefs = (id: number, chatBoxRef: HTMLDivElement, svg: SVGSVGElement | null, path: SVGPathElement | null) => {
+    objectRefs.current[id] = {
+      chatBox: chatBoxRef,
+      svg: svg,
+      path: path
+    }
+  }
+
+  const setSvgRefs = (id: number, ref: SVGSVGElement) => {
+    svgRefs.current[id] = ref
+  }
+
+  const setPathRefs = (id: number, ref: SVGPathElement) => {
+    pathRefs.current[id] = ref
+  }
 
   const handleMouseDown = (e: React.MouseEvent, type: "world" | "object", id?: number) => {
     lastPos.current = { x: e.clientX, y: e.clientY };
@@ -53,7 +79,6 @@ const InfiniteCanvas = () => {
       dx *= 1/zoomRef.current;  
       dy *= 1/zoomRef.current;
 
-
       objectsPos.current[id] = {
         x: objectsPos.current[id].x + dx,
         y: objectsPos.current[id].y + dy,
@@ -65,8 +90,8 @@ const InfiniteCanvas = () => {
 
   const onMouseUp = async () => {
     if(draggingObject.current) {
-      // console.log(objectsPos.current[draggingObject.current])
-      // console.log(chat)
+      // old version
+      /*
       const updatedXYChat: Chat = 
       { ...chat, 
         chat_logs: chat.chat_logs?.map((c) => 
@@ -78,16 +103,24 @@ const InfiniteCanvas = () => {
           : c 
         ) 
       }
+      */
+      const updatedXYChat: Chat = 
+      { ...chat, 
+        chat_logs: chat.chat_logs?.map((c) => 
+          ({
+            ...c,
+            position: objectsPos.current[c._id]
+          })
+        ) 
+      }
 
-      // setChat(updatedXYChat);
-      // ไม่ต้อง setChat แล้วเปลียนเป็น updatechatxy เพิ่มใน mian
-      // แยก addchatlog ของ input prompt
-      // not save เปลี่ยนชื่อเป็น offset กับ scale
-
-      // ทำ svg -> svg realtime useref -> แก้อันนี้ -> แก้ store ทั้งหมดของ inputprompt
-      console.log('here')
-      setChat(updatedXYChat)
+      // setChat(updatedXYChat)
       window.chat.updateChat(updatedXYChat)
+      // pathRefs.current[draggingObject.current].style.stroke = "red"
+      const svg = svgRefs.current[draggingObject.current]
+      if(svg) {
+        svg.querySelector("path")!.style.stroke = "red" 
+      }
     }
     else {
       window.chat.updateChatNotSave({...chat, offset: offsetRef.current })
@@ -157,7 +190,9 @@ const InfiniteCanvas = () => {
             handleMouseDown={handleMouseDown}
             objectDivRefs={objectDivRefs}
             objectsPos={objectsPos}
-            // handleChatReply={handleChatReply}
+            setSvgRefs={setSvgRefs}
+            setPathRefs={setPathRefs}
+            setObjectRefs={setObjectRefs}
           />
         ))}
       </World>

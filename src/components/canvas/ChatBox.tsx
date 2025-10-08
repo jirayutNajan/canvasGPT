@@ -1,4 +1,4 @@
-import React, { memo, useRef, useState } from "react";
+import React, { memo, useState } from "react";
 import SvgLine from "./SvgLine";
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -17,13 +17,19 @@ const ChatBox = forwardRef<
     objectsPos: React.RefObject<{ [id: number]: { x: number; y: number } }>
     objectDivRefs: React.RefObject<{ [id: string]: HTMLDivElement }>
     objectHeight: number
+    setSvgRefs: (id: number, ref: SVGSVGElement) => void,
+    setPathRefs: (id: number, ref: SVGPathElement) => void,
+    setObjectRefs: (id: number, chatBoxRef: HTMLDivElement, svg: SVGSVGElement | null, path: SVGPathElement | null) => void
   }
   >(({ 
     chatLog, 
     handleMouseDown,
     objectsPos,
     objectDivRefs,
-    objectHeight
+    objectHeight,
+    setSvgRefs,
+    setPathRefs,
+    setObjectRefs
   }, ref ) => {
   // กันไม่ใช้ component นี้ตัวอื่นๆที่ subscribe เหมือนกัน rerender ด้วย
 
@@ -31,6 +37,7 @@ const ChatBox = forwardRef<
   const setReplyChatText = useReplyChatStore((s) => s.setReplyChatText);
 
   const [isReply, setIsReply] = useState(false);
+
 
   const handleReply = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
@@ -45,7 +52,15 @@ const ChatBox = forwardRef<
     }
   }
 
-  console.log('re1', chatLog._id)
+  const setSvgRef = (ref: SVGSVGElement) => {
+    setSvgRefs(chatLog._id, ref)
+  }
+
+  const setPathRef = (ref: SVGPathElement) => {
+    setPathRefs(chatLog._id, ref)
+  }
+
+  // console.log('re', chatLog._id)
 
   return (
     <div
@@ -70,6 +85,8 @@ const ChatBox = forwardRef<
           objectHeight={objectHeight}
           toPos={objectsPos.current[chatLog?.refers]}
           toHeight={objectDivRefs.current[chatLog.refers]?.offsetHeight}
+          setSvgRef={setSvgRef}
+          setPathRef={setPathRef}
         />
         )
       }
@@ -103,7 +120,7 @@ const ChatBox = forwardRef<
 export default ChatBox
 
 const ChatReply = memo(({ response }: { response?: string }) => {
-  console.log('re2 mark')
+  // console.log('re mark')
   return (
     <ReactMarkdown
       children={response}
