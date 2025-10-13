@@ -1,12 +1,12 @@
-import React, { useRef, useState, type ReactNode, useEffect } from "react";
+import React, { useRef, useState, type ReactNode, useEffect, useLayoutEffect } from "react";
 import { useSideBarstore } from "../../store/sidebarstore";
 import { useChatCanvas } from "../../store/chatstore";
 import ZoomButton from "./ZoomButton";
 import ChatBox from "./ChatBox";
-import type { Chat, ChatLog } from "../../interface/ChatInterface";
+import type { Chat } from "../../interface/ChatInterface";
 
 const InfiniteCanvas = () => {
-  const { chat, setChat } = useChatCanvas();
+  const { chat } = useChatCanvas();
   const { isOpen: isSideBarOpen } = useSideBarstore();
   const [mounted, setMounted] = useState(false);
 
@@ -24,10 +24,7 @@ const InfiniteCanvas = () => {
     objectsPos.current[log._id] = { x: log.position.x, y: log.position.y };
   })
 
-  // const objectDivRefs = useRef<{ [id: number]: HTMLDivElement}>({});
   const draggingObject = useRef<number | null>(null);
-  // const svgRefs = useRef<{ [id: number]: SVGSVGElement }>({})
-  // const pathRefs = useRef<{ [id: number]: SVGPathElement }>({})
 
   const objectsRefs = useRef<{ 
     [id: number]: { chatBox: HTMLDivElement | null, svg: SVGSVGElement | null, path: SVGPathElement | null }
@@ -43,16 +40,6 @@ const InfiniteCanvas = () => {
       path: path
     }
   }
-
-  console.log(objectsRefs)
-
-  // const setSvgRefs = (id: number, ref: SVGSVGElement) => {
-  //   svgRefs.current[id] = ref
-  // }
-
-  // const setPathRefs = (id: number, ref: SVGPathElement) => {
-  //   pathRefs.current[id] = ref
-  // }
 
   const handleMouseDown = (e: React.MouseEvent, type: "world" | "object", id?: number) => {
     lastPos.current = { x: e.clientX, y: e.clientY };
@@ -85,14 +72,84 @@ const InfiniteCanvas = () => {
         y: objectsPos.current[id].y + dy,
       }
 
-      // objectDivRefs.current[id]!.style.transform = `translate(${objectsPos.current[id].x}px, ${objectsPos.current[id].y}px)`
       if(objectsRefs.current[id].chatBox) {
         objectsRefs.current[id].chatBox.style.transform = `translate(${objectsPos.current[id].x}px, ${objectsPos.current[id].y}px)`
+
+        if(objectsRefs.current[id].path && objectsRefs.current[id].svg) {
+          calculateAndChangeSVGAndPath(id)
+        }
       }
     }
   }
 
-  const onMouseUp = async () => {
+  function calculateAndChangeSVGAndPath(id: number) {
+    if(!chat.chat_logs) return;
+    const referId = chat.chat_logs[id-1]?.refers;
+    if(!referId) return
+
+    const thisObjectPos = objectsPos.current[id];
+    const thisReferPos = objectsPos.current[referId];
+    const thisObject = objectsRefs.current[id].chatBox;
+    const refersObject = objectsRefs.current[referId].chatBox;
+
+    if(!refersObject || !thisObject || !objectsRefs.current[id].svg || !objectsRefs.current[id].path) return;
+
+    const width = Math.abs(thisObjectPos.x - thisReferPos.x);
+    const height = Math.abs(Math.abs(thisObjectPos.y - thisReferPos.y) - refersObject?.offsetHeight)
+
+    objectsRefs.current[id].svg.style.width = `${width}`;
+    objectsRefs.current[id].svg.style.height = `${height}`;
+
+    let pos: "tl" | "tr" | "bl" | "br";
+
+    if(thisObjectPos.x < thisReferPos.x && thisObjectPos.y < thisReferPos.y) pos = "tl"
+    else if(thisObjectPos.x > thisReferPos.x && thisObjectPos.y < thisReferPos.y) pos = "tr"
+    else if(thisObjectPos.x < thisReferPos.x && thisObjectPos.y > thisReferPos.y) pos = "bl"
+    else pos = "br"
+
+    let path = "";
+    let svgPos = "";
+    if(pos === "bl" || pos === "tr") {
+      if(pos === "bl") {
+        svgPos = `translate(300px, -${height + 9}px)`
+      }
+      else {
+        svgPos = `translate(${-width + 300}px, ${thisObject.offsetHeight - 7}px)`
+      }
+
+      path = `
+      M 0 ${height}
+      L 0 ${height*0.5 + 20}
+      Q 0 ${height*0.5}
+      20 ${height*0.5}
+      L ${width - 20} ${height*0.5}
+      Q ${width} ${height*0.5} ${width} ${height*0.5 - 20}
+      L ${width} 0
+      `
+    }
+    else {
+      if(pos === "br") {
+        svgPos = `translate(${-width + 300}px, -${height + 9}px)`
+      }
+      else {
+        svgPos = `translate(300px, ${thisObject.offsetHeight - 7}px)`
+      }
+
+      path = `
+      M 0 0
+      L 0 ${height*0.5 - 20}
+      Q 0 ${height*0.5} 20 ${height*0.5}
+      L ${width - 20} ${height*0.5}
+      Q ${width} ${height*0.5} ${width} ${height * 0.5 + 20}
+      L ${width} ${height}
+      `
+    }
+
+    objectsRefs.current[id].path.setAttribute("d", path);
+    objectsRefs.current[id].svg.style.transform = svgPos;
+  }
+
+  const onMouseUp = () => {
     if(draggingObject.current) {
       // old version
       /*
@@ -115,19 +172,16 @@ const InfiniteCanvas = () => {
             ...c,
             position: objectsPos.current[c._id]
           })
-        ) 
+        ) ,
+        zoomScale: zoomRef.current,
+        offset: offsetRef.current
       }
 
       // setChat(updatedXYChat)
       window.chat.updateChat(updatedXYChat)
-      // pathRefs.current[draggingObject.current].style.stroke = "red"
-      // const svg = svgRefs.current[draggingObject.current]
-      // if(svg) {
-      //   svg.querySelector("path")!.style.stroke = "red" 
-      // }
     }
     else {
-      window.chat.updateChatNotSave({...chat, offset: offsetRef.current })
+      window.chat.updateChatNotSave({...chat, offset: offsetRef.current, zoomScale: zoomRef.current })
     }
 
     draggingObject.current = null;
@@ -163,6 +217,16 @@ const InfiniteCanvas = () => {
 
   useEffect(() => {
     setMounted(true);
+    // เพิ่ม setTimeout เพื่อให้ refs มีเวลา set ค่า
+    setTimeout(() => {
+      if(chat.chat_logs) {
+        chat.chat_logs.map(log => {
+          if(log.refers) {
+            calculateAndChangeSVGAndPath(log._id)
+          } 
+        })
+      }
+    }, 100) // หรือ 100ms ถ้ายังไม่ได้ผล
   }, [])
 
   // console.log("first page rerender");
@@ -205,8 +269,3 @@ const InfiniteCanvas = () => {
 }
 
 export default InfiniteCanvas;
-
-/* 
-note ใช้ useRef แทนถ้าค่าที่ render ไม่เปลี่ยน ใช้ usestate แค่ตอนเปลี่ยน text ก็พอ
-เปลี่ยน style ถ้าใช้ useState rerender บ่อยจะ lag ให้ useRef เปลี่ยน ไม่ lag เลย
-*/

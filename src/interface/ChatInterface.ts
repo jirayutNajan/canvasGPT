@@ -5,6 +5,8 @@ export interface ChatLog {
   createdAt?: string;
   position: {x: number, y: number};
   refers?: number; // array or string or Array<{id: string}>
+  parent?: number[];
+  child: number[];
 }
 
 //todo ทำ width height ของ chatlog

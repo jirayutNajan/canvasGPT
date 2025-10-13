@@ -12,21 +12,11 @@ export default function ChatBox(
 { 
     chatLog, 
     handleMouseDown,
-    // objectsPos,
-    // objectDivRefs,
-    // objectHeight,
-    // setSvgRefs,
-    // setPathRefs,
     setObjectRefs
   }: 
   {
     chatLog: ChatLog,
     handleMouseDown: (e: React.MouseEvent, type: "world" | "object", id?: number) => void,
-    // objectsPos: React.RefObject<{ [id: number]: { x: number; y: number } }>,
-    // objectDivRefs: React.RefObject<{ [id: string]: HTMLDivElement }>
-    // objectHeight: number
-    // setSvgRefs: (id: number, ref: SVGSVGElement) => void,
-    // setPathRefs: (id: number, ref: SVGPathElement) => void,
     setObjectRefs: (
       {id, chatBoxRef, svg, path}: 
       {id: number, chatBoxRef: HTMLDivElement, svg: SVGSVGElement | null, path: SVGPathElement | null}
@@ -73,7 +63,6 @@ export default function ChatBox(
     pathRef.current = path
   }
 
-  // console.log('re', chatLog._id)
 
   const ChatReply = memo(({ response }: { response?: string }) => {
     // console.log('re mark')
@@ -105,12 +94,6 @@ export default function ChatBox(
       {chatLog?.refers && (
         <SvgLine 
           key={chatLog._id}
-          // objectPos={objectsPos.current[chatLog._id]}
-          // objectHeight={objectHeight}
-          // toPos={objectsPos.current[chatLog?.refers]}
-          // toHeight={objectDivRefs.current[chatLog.refers]?.offsetHeight}
-          // setSvgRef={setSvgRef}
-          // setPathRef={setPathRef}
           setSvgAndPathRef={setSvgAndPathRef}
         />
         )

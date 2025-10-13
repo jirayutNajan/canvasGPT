@@ -78,7 +78,7 @@ const InputPrompt = () => {
   // TODO แยก input เป็นอีก form กัน rerender เยอะ
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-10 ">
+    <div className="absolute bottom-0 left-0 right-0 z-10  pointer-events-none">
       <div className="flex h-full justify-center">
         <div className="flex flex-col w-md mb-5">
           {replyChatId && (
@@ -90,7 +90,7 @@ const InputPrompt = () => {
               <hr className="text-[#b2b2b2]" />
             </>
           )}
-          <div className="flex w-full">
+          <div className="flex w-full pointer-events-auto">
             <div className={`bg-[#303030] p-3 flex w-full ${replyChatId ? "border-2 border-t-0 border-white" : ""}
             ${replyChatId ? "rounded-b-2xl pt-0.5": "rounded-2xl"}`}>
               <input 
