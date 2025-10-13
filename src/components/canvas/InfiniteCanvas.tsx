@@ -1,9 +1,9 @@
-import React, { useRef, useState, type ReactNode, useEffect, useLayoutEffect } from "react";
+import React, { useRef, useState, type ReactNode, useEffect } from "react";
 import { useSideBarstore } from "../../store/sidebarstore";
 import { useChatCanvas } from "../../store/chatstore";
 import ZoomButton from "./ZoomButton";
 import ChatBox from "./ChatBox";
-import type { Chat } from "../../interface/ChatInterface";
+import type { Chat, ChatLog } from "../../interface/ChatInterface";
 
 const InfiniteCanvas = () => {
   const { chat } = useChatCanvas();
@@ -151,43 +151,24 @@ const InfiniteCanvas = () => {
 
   const onMouseUp = () => {
     if(draggingObject.current) {
-      // old version
-      /*
-      const updatedXYChat: Chat = 
-      { ...chat, 
-        chat_logs: chat.chat_logs?.map((c) => 
-          c._id === draggingObject.current ? 
-            { ...c, position: { 
-              x: objectsPos.current[draggingObject.current].x , 
-              y: objectsPos.current[draggingObject.current].y 
-            } } 
-          : c 
-        ) 
-      }
-      */
-      const updatedXYChat: Chat = 
-      { ...chat, 
-        chat_logs: chat.chat_logs?.map((c) => 
-          ({
-            ...c,
-            position: objectsPos.current[c._id]
-          })
-        ) ,
-        zoomScale: zoomRef.current,
-        offset: offsetRef.current
-      }
+      const updatedXYChatLogs: ChatLog[] = chat.chat_logs.map((l) =>
+        ({
+          ...l,
+          position: objectsPos.current[l._id]
+        })
+      )
 
-      // setChat(updatedXYChat)
-      window.chat.updateChat(updatedXYChat)
+      if(chat.$loki) window.chat.updateChat(chat.$loki, updatedXYChatLogs)
     }
     else {
-      window.chat.updateChatNotSave({...chat, offset: offsetRef.current, zoomScale: zoomRef.current })
+      if(chat.$loki) window.chat.updateChatOffset(chat.$loki, offsetRef.current)
     }
 
     draggingObject.current = null;
     panning.current = false;
   }
 
+  let wheelTimeout: NodeJS.Timeout;
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     let newScale = zoomRef.current;
     if(e.deltaY < 0) newScale += 0.05;
@@ -200,7 +181,13 @@ const InfiniteCanvas = () => {
       `scale(${zoomRef.current}) translate(${offsetRef.current.x}px, ${offsetRef.current.y}px)`;
     worldDivRef.current!.style.transformOrigin = "center center";
 
-    window.chat.updateChatNotSave({...chat, zoomScale: zoomRef.current })
+    clearTimeout(wheelTimeout)
+    wheelTimeout = setTimeout(() => {
+      if(chat.$loki) {
+        console.log(zoomRef.current)
+        window.chat.updateChatZoomScale(chat.$loki, zoomRef.current)
+      }
+    }, 200)
   }
   
   const World = ({ children }: { children: ReactNode }) => { 
@@ -226,7 +213,7 @@ const InfiniteCanvas = () => {
           } 
         })
       }
-    }, 100) // หรือ 100ms ถ้ายังไม่ได้ผล
+    }, 100)
   }, [])
 
   // console.log("first page rerender");
@@ -251,15 +238,7 @@ const InfiniteCanvas = () => {
           <ChatBox 
             chatLog={chatLog} 
             key={chatLog._id} 
-            // ref={(el) => {
-            //   if (el) objectDivRefs.current[chatLog._id] = el
-            // }}
-            // objectHeight={objectDivRefs.current[chatLog._id]?.offsetHeight}
             handleMouseDown={handleMouseDown}
-            // objectDivRefs={objectDivRefs}
-            // objectsPos={objectsPos}
-            // setSvgRefs={setSvgRefs}
-            // setPathRefs={setPathRefs}
             setObjectRefs={setObjectRefs}
           />
         ))}

@@ -89,12 +89,11 @@ ipcMain.handle('chats-add', (_evt, chat) => {
   return newChat;
 })
 
-ipcMain.handle('chats-update', (_evt, chat) => {
+ipcMain.handle('chats-update', (_evt, _id, chatLogs) => {
   const chats = db.getCollection('chats');
-  const existing = chats.findOne({ $loki: Number(chat.$loki) });
+  const existing = chats.findOne({ $loki: Number(_id) });
   if(!existing) return null;
-  Object.assign(existing, chat);
-  chats.update(existing)
+  chats.update({...existing, chat_logs: chatLogs})
   db.saveDatabase();
 })
 
@@ -115,4 +114,18 @@ ipcMain.handle('chats-delete', (_evt, _id) => {
   chats.remove(existing);
   db.saveDatabase();
   return true;
+})
+
+ipcMain.handle('chats-update-zoom', (_evt, _id, zoomScale) => {
+  const chats = db.getCollection('chats');
+  const existing = chats.findOne({ $loki: Number(_id) });
+  if(!existing) return
+  chats.update({...existing, zoomScale})
+})
+
+ipcMain.handle('chats-update-offset', (_evt, _id, offset) => {
+  const chats = db.getCollection('chats');
+  const existing = chats.findOne({ $loki: Number(_id) });
+  if(!existing) return
+  chats.update({...existing, offset})
 })

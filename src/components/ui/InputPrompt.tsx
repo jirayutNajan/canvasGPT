@@ -20,7 +20,7 @@ const InputPrompt = () => {
 
   const { mutateAsync: addChat } = useMutation({
     mutationFn: async (input: string) => {
-      if(chat.chat_logs?.length === 0) setChat({name: input, zoomScale: 1});
+      if(chat.chat_logs?.length === 0) setChat({name: input, zoomScale: 1, chat_logs: []});
 
       // TODO implement ai กับ electron ใน main.js
       const dummyChatLog: ChatLog = {
