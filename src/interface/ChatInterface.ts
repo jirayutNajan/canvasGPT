@@ -4,12 +4,9 @@ export interface ChatLog {
   response?: string;
   createdAt?: string;
   position: {x: number, y: number};
-  refers?: number; // array or string or Array<{id: string}>
-  parent?: number[];
-  child?: number[];
+  parent: number[];
+  child: number[];
 }
-
-//todo ทำ width height ของ chatlog
 
 export interface Chat {
   $loki?: string;

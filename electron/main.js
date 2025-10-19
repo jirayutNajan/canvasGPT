@@ -97,15 +97,6 @@ ipcMain.handle('chats-update', (_evt, _id, chatLogs) => {
   db.saveDatabase();
 })
 
-ipcMain.handle('chats-update-not-save', (_evt, chat) => {
-  const chats = db.getCollection('chats');
-  const existing = chats.findOne({ $loki: Number(chat.$loki) });
-  if(!existing) return null;
-  Object.assign(existing, chat);
-  chats.update(existing);
-  return existing;
-})
-
 ipcMain.handle('chats-delete', (_evt, _id) => {
   _id = Number(_id);
   const chats = db.getCollection('chats');
@@ -128,4 +119,23 @@ ipcMain.handle('chats-update-offset', (_evt, _id, offset) => {
   const existing = chats.findOne({ $loki: Number(_id) });
   if(!existing) return
   chats.update({...existing, offset})
+})
+
+ipcMain.handle('chats-chatLog-x-y', (_evt, _id, chatLogId, position) => {
+  const chats = db.getCollection('chats');
+  const existing = chats.findOne({ $loki: Number(_id) });
+  if(!existing) return null;
+  existing.chat_logs[chatLogId].position = position;
+  chats.update(existing);
+  db.saveDatabase();
+})
+
+ipcMain.handle('chats-add-ChatLog', (_evt, _id, newChatLog) => {
+  const chats = db.getCollection('chats');
+  const existing = chats.findOne({ $loki: Number(_id) });
+  if(!existing) return;
+  existing.chat_logs.push(newChatLog);
+  if(newChatLog.parent[0] != null) existing.chat_logs[newChatLog.parent[0]].child.push(newChatLog._id)
+  chats.update(existing)
+  db.saveDatabase()
 })

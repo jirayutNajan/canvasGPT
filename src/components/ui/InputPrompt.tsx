@@ -18,19 +18,21 @@ const InputPrompt = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+
   const { mutateAsync: addChat } = useMutation({
     mutationFn: async (input: string) => {
       if(chat.chat_logs?.length === 0) setChat({name: input, zoomScale: 1, chat_logs: []});
 
       // TODO implement ai กับ electron ใน main.js
       const dummyChatLog: ChatLog = {
-        _id: chat?.chat_logs?.length ? chat?.chat_logs?.length + 1 : 1,
+        _id: chat?.chat_logs?.length ? chat?.chat_logs?.length : 0,
         input, 
         response: "ChatGPT ทำงานโดยใช้ โมเดลภาษา (Large Language Model) ที่ฝึกจากข้อความจำนวนมหาศาล เพื่อเรียนรู้รูปแบบภาษา ความสัมพันธ์ของคำ",
         createdAt: Date.now().toString(), 
         // position: chat?.chat_logs?.length === 0 ? { x: window.innerWidth/2, y: window.innerHeight/2 } : { x: 0, y: 0 }, 
         position: { x: 0, y: 0},
-        refers: replyChatId || undefined
+        parent: replyChatId != null ? [replyChatId] : [],
+        child: []
       }
 
       addChatLog(dummyChatLog)
@@ -44,7 +46,6 @@ const InputPrompt = () => {
           zoomScale: 1,
         }
         newChat = await window.chat.addChat(newChat);
-        setChat(newChat);
         queryClient.setQueryData(['chats'], (oldData: Chat[]) => {
           return [
             newChat,
@@ -54,15 +55,7 @@ const InputPrompt = () => {
         navigate(`${queryClient.getQueryData<Chat[]>(['chats'])?.length}`)
       }
       else {
-        let updatedChat: Chat = {
-          ...chat,
-          chat_logs: [
-            ...(chat.chat_logs || []),
-            dummyChatLog
-          ],
-        }
-        setChat(updatedChat);
-        await window.chat.updateChat(updatedChat);
+        if(chat.$loki) window.chat.addChatLog(chat.$loki, dummyChatLog)
       }
     }
   })
@@ -81,7 +74,7 @@ const InputPrompt = () => {
     <div className="absolute bottom-0 left-0 right-0 z-10  pointer-events-none">
       <div className="flex h-full justify-center">
         <div className="flex flex-col w-md mb-5">
-          {replyChatId && (
+          {replyChatId != null && (
             <>
               <div className="bg-[#303030] w-full truncate rounded-t-2xl border-2 border-b-0 border-white text-sm
               text-[#696969] p-1">
@@ -91,8 +84,8 @@ const InputPrompt = () => {
             </>
           )}
           <div className="flex w-full pointer-events-auto">
-            <div className={`bg-[#303030] p-3 flex w-full ${replyChatId ? "border-2 border-t-0 border-white" : ""}
-            ${replyChatId ? "rounded-b-2xl pt-0.5": "rounded-2xl"}`}>
+            <div className={`bg-[#303030] p-3 flex w-full ${replyChatId != null ? "border-2 border-t-0 border-white" : ""}
+            ${replyChatId != null ? "rounded-b-2xl pt-0.5": "rounded-2xl"}`}>
               <input 
                 type="text"
                 className="outline-none ring-0 p-2 rounded-xl w-full"

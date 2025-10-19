@@ -15,8 +15,9 @@ contextBridge.exposeInMainWorld('chat', {
   getChat: (_id) => ipcRenderer.invoke('chats-getOne', _id),
   addChat: (chat) => ipcRenderer.invoke('chats-add', chat),
   updateChat: (_id, chatLogs) => ipcRenderer.invoke('chats-update', _id, chatLogs),
-  updateChatNotSave: (chat) => ipcRenderer.invoke('chats-update-not-save', chat),
   deleteChat: (_id) => ipcRenderer.invoke('chats-delete', _id),
   updateChatZoomScale: (_id, zoomScale) => ipcRenderer.invoke("chats-update-zoom", _id, zoomScale),
   updateChatOffset: (_id, offset) => ipcRenderer.invoke("chats-update-offset", _id, offset),
+  updateChatLogXY: (_id, chatLogId, position) => ipcRenderer.invoke("chats-chatLog-x-y", _id, chatLogId, position),
+  addChatLog: (_id, newChatLog) => ipcRenderer.invoke("chats-add-ChatLog", _id, newChatLog),
 });

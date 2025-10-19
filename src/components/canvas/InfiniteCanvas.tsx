@@ -3,18 +3,16 @@ import { useSideBarstore } from "../../store/sidebarstore";
 import { useChatCanvas } from "../../store/chatstore";
 import ZoomButton from "./ZoomButton";
 import ChatBox from "./ChatBox";
-import type { Chat, ChatLog } from "../../interface/ChatInterface";
 
 const InfiniteCanvas = () => {
-  const { chat } = useChatCanvas();
+  const { chat } = useChatCanvas(); // TODO เอาอันนี้ออกแล้วรับมาจาก home
   const { isOpen: isSideBarOpen } = useSideBarstore();
   const [mounted, setMounted] = useState(false);
-
   // state and ref of canvas
   const offsetRef = useRef({ x: chat.offset?.x || 0, y: chat.offset?.y || 0 });
   const zoomRef = useRef(chat?.zoomScale || 1);
   const worldDivRef = useRef<HTMLDivElement>(null);
-  const lastPos = useRef({ x: 0, y: 0 }); // ตำแหน่ง mouse ล่าสุด ใช้ useRef เพราะแค่เก็บค่า แต่ไม่ต้อง rerender ทำให้ ลื่น
+  const lastPos = useRef({ x: 0, y: 0 });
   const panning = useRef(false);
   
   // object on canvas
@@ -44,7 +42,7 @@ const InfiniteCanvas = () => {
   const handleMouseDown = (e: React.MouseEvent, type: "world" | "object", id?: number) => {
     lastPos.current = { x: e.clientX, y: e.clientY };
     if (type == "object") {
-      if(!id) return;
+      if(id == null) return;
       draggingObject.current = id;
     }
     else if(type == "world") {
@@ -62,7 +60,7 @@ const InfiniteCanvas = () => {
       offsetRef.current = { x: offsetRef.current.x + dx, y: offsetRef.current.y + dy };
       worldDivRef.current!.style.transform = `translate(${offsetRef.current.x}px, ${offsetRef.current.y}px) scale(${zoomRef.current})`;
     }
-    else if (draggingObject.current) {
+    else if (draggingObject.current != null) {
       const id = draggingObject.current;
       dx *= 1/zoomRef.current;  
       dy *= 1/zoomRef.current;
@@ -74,28 +72,32 @@ const InfiniteCanvas = () => {
 
       if(objectsRefs.current[id].chatBox) {
         objectsRefs.current[id].chatBox.style.transform = `translate(${objectsPos.current[id].x}px, ${objectsPos.current[id].y}px)`
-
-        if(objectsRefs.current[id].path && objectsRefs.current[id].svg) {
+      }
+      if(chat.chat_logs[id].parent[0] != null) {
+        calculateAndChangeSVGAndPath(id)
+      }
+      if(chat.chat_logs[id].child) {
+        chat.chat_logs[id].child.forEach(id => {
           calculateAndChangeSVGAndPath(id)
-        }
+        })
       }
     }
   }
 
   function calculateAndChangeSVGAndPath(id: number) {
     if(!chat.chat_logs) return;
-    const referId = chat.chat_logs[id-1]?.refers;
-    if(!referId) return
+    const parentId = chat.chat_logs[id]?.parent[0];
+    if(parentId == null) return
 
     const thisObjectPos = objectsPos.current[id];
-    const thisReferPos = objectsPos.current[referId];
+    const thisReferPos = objectsPos.current[parentId];
     const thisObject = objectsRefs.current[id].chatBox;
-    const refersObject = objectsRefs.current[referId].chatBox;
+    const parentObject = objectsRefs.current[parentId].chatBox;
 
-    if(!refersObject || !thisObject || !objectsRefs.current[id].svg || !objectsRefs.current[id].path) return;
+    if(!parentObject || !thisObject || !objectsRefs.current[id].svg || !objectsRefs.current[id].path) return;
 
     const width = Math.abs(thisObjectPos.x - thisReferPos.x);
-    const height = Math.abs(Math.abs(thisObjectPos.y - thisReferPos.y) - refersObject?.offsetHeight)
+    const height = Math.abs(Math.abs(thisObjectPos.y - thisReferPos.y) - parentObject?.offsetHeight)
 
     objectsRefs.current[id].svg.style.width = `${width}`;
     objectsRefs.current[id].svg.style.height = `${height}`;
@@ -150,15 +152,8 @@ const InfiniteCanvas = () => {
   }
 
   const onMouseUp = () => {
-    if(draggingObject.current) {
-      const updatedXYChatLogs: ChatLog[] = chat.chat_logs.map((l) =>
-        ({
-          ...l,
-          position: objectsPos.current[l._id]
-        })
-      )
-
-      if(chat.$loki) window.chat.updateChat(chat.$loki, updatedXYChatLogs)
+    if(draggingObject.current != null) {
+      if(chat.$loki) window.chat.updateChatLogXY(chat.$loki, draggingObject.current, objectsPos.current[draggingObject.current])
     }
     else {
       if(chat.$loki) window.chat.updateChatOffset(chat.$loki, offsetRef.current)
@@ -205,18 +200,21 @@ const InfiniteCanvas = () => {
   useEffect(() => {
     setMounted(true);
     // เพิ่ม setTimeout เพื่อให้ refs มีเวลา set ค่า
-    setTimeout(() => {
-      if(chat.chat_logs) {
-        chat.chat_logs.map(log => {
-          if(log.refers) {
-            calculateAndChangeSVGAndPath(log._id)
-          } 
-        })
-      }
-    }, 100)
   }, [])
+  
+  setTimeout(() => {
+    if(chat.chat_logs) {
+      chat.chat_logs.map(log => {
+        if(log.parent) {
+          calculateAndChangeSVGAndPath(log._id)
+        } 
+      })
+    }
+  }, 100)
 
+  // TODO แก้ rerender 4 รอบ หาให้เจอ หลัง feature หลักครบ!!!!!!!!
   // console.log("first page rerender");
+  console.log(chat);
 
   return (
     <div 

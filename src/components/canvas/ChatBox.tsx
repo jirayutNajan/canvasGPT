@@ -91,11 +91,11 @@ export default function ChatBox(
         }
       }}
     >
-      {chatLog?.refers && (
-        <SvgLine 
-          key={chatLog._id}
-          setSvgAndPathRef={setSvgAndPathRef}
-        />
+      {chatLog.parent[0] != null && (
+          <SvgLine 
+            key={chatLog._id}
+            setSvgAndPathRef={setSvgAndPathRef}
+          />
         )
       }
       <div className="absolute bottom-0 w-full justify-center items-center z-50 hidden group-hover:flex cursor-pointer 
