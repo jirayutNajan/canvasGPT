@@ -6,7 +6,6 @@ import ChatBox from "./ChatBox";
 
 const InfiniteCanvas = () => {
   const { chat, setChat } = useChatCanvas(); // TODO เอาอันนี้ออกแล้วรับมาจาก home
-  console.log(chat.offset)
   const { isOpen: isSideBarOpen } = useSideBarstore();
   const [mounted, setMounted] = useState(false);
   // state and ref of canvas
@@ -152,12 +151,17 @@ const InfiniteCanvas = () => {
     objectsRefs.current[id].svg.style.transform = svgPos;
   }
 
+  console.log(zoomRef.current, offsetRef.current)
+  console.log(chat.zoomScale, chat.offset)
+
   const onMouseUp = () => {
     if(draggingObject.current != null) {
       if(chat.$loki) {
         window.chat.updateChatLogXY(chat.$loki, draggingObject.current, objectsPos.current[draggingObject.current])
         setChat({
           ...chat,
+          zoomScale: zoomRef.current,
+          offset: offsetRef.current,
           chat_logs: chat.chat_logs.map(chatlog => (
             {
               ...chatlog,
@@ -179,20 +183,36 @@ const InfiniteCanvas = () => {
 
   let wheelTimeout: NodeJS.Timeout;
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    let newScale = zoomRef.current;
-    if(e.deltaY < 0) newScale += 0.05;
+    const container = e.currentTarget.getBoundingClientRect();
+    const centerX = container.width / 2;
+    const centerY = container.height / 2;
+
+    const oldScale = zoomRef.current;
+    let newScale = oldScale;
+    
+    if (e.deltaY < 0) newScale += 0.05;
     else newScale -= 0.05;
     
     newScale = Math.min(Math.max(newScale, 0.2), 1.5);
-    zoomRef.current = newScale;
 
-    worldDivRef.current!.style.transform = 
-      `scale(${zoomRef.current}) translate(${offsetRef.current.x}px, ${offsetRef.current.y}px)`;
-    worldDivRef.current!.style.transformOrigin = "center center";
+    const scaleRatio = newScale / oldScale;
+    
+    const newOffsetX = centerX - (centerX - offsetRef.current.x) * scaleRatio;
+    const newOffsetY = centerY - (centerY - offsetRef.current.y) * scaleRatio;
+
+    zoomRef.current = newScale;
+    offsetRef.current = { x: newOffsetX, y: newOffsetY };
+    console.log(zoomRef.current, offsetRef.current)
+
+    if (worldDivRef.current) {
+        worldDivRef.current.style.transformOrigin = '0 0'; 
+        worldDivRef.current.style.transform = `translate(${newOffsetX}px, ${newOffsetY}px) scale(${newScale})`;
+    }
 
     clearTimeout(wheelTimeout)
     wheelTimeout = setTimeout(() => {
       if(chat.$loki) {
+        window.chat.updateChatOffset(chat.$loki, offsetRef.current)
         window.chat.updateChatZoomScale(chat.$loki, zoomRef.current)
       }
     }, 200)
@@ -203,6 +223,7 @@ const InfiniteCanvas = () => {
       <div 
         ref={worldDivRef} 
         style={{
+          transformOrigin: '0 0',
           transform: `translate(${offsetRef.current.x}px, ${offsetRef.current.y}px) scale(${zoomRef.current})`
         }}
       >
