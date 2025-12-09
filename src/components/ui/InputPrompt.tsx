@@ -10,14 +10,13 @@ import { useReplyChatStore } from "../../store/replychatstore";
 
 // ทำ chat reply ต่อ
 
-const InputPrompt = () => {
+const InputPrompt = ({ chatId }: { chatId?: string }) => {
   const [text, setText] = useState("");
   
   const { chat, addChatLog, setChat } = useChatCanvas();
   const { replyChatId, replyChatText, setReplyChatId, setReplyChatText } = useReplyChatStore();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-
 
   const { mutateAsync: addChat } = useMutation({
     mutationFn: async (input: string) => {

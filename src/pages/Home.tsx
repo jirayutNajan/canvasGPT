@@ -18,6 +18,7 @@ export const Home = () => {
     queryFn: async () => {
       if(chatId) {
         const chat = await window.chat.getChat(chatId);
+        console.log(chat)
         if(chat) {
           setChat(chat)
         }
@@ -38,7 +39,7 @@ export const Home = () => {
   return (
     <>
       {!isPending && <InfiniteCanvas />}
-      <InputPrompt />
+      <InputPrompt chatId={chatId} />
       <div className="fixed top-10 flex w-full justify-center">http://localhost:5173{url.pathname}</div>
     </>
   )

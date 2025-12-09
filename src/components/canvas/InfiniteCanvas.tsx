@@ -5,7 +5,8 @@ import ZoomButton from "./ZoomButton";
 import ChatBox from "./ChatBox";
 
 const InfiniteCanvas = () => {
-  const { chat } = useChatCanvas(); // TODO เอาอันนี้ออกแล้วรับมาจาก home
+  const { chat, setChat } = useChatCanvas(); // TODO เอาอันนี้ออกแล้วรับมาจาก home
+  console.log(chat.offset)
   const { isOpen: isSideBarOpen } = useSideBarstore();
   const [mounted, setMounted] = useState(false);
   // state and ref of canvas
@@ -153,10 +154,23 @@ const InfiniteCanvas = () => {
 
   const onMouseUp = () => {
     if(draggingObject.current != null) {
-      if(chat.$loki) window.chat.updateChatLogXY(chat.$loki, draggingObject.current, objectsPos.current[draggingObject.current])
+      if(chat.$loki) {
+        window.chat.updateChatLogXY(chat.$loki, draggingObject.current, objectsPos.current[draggingObject.current])
+        setChat({
+          ...chat,
+          chat_logs: chat.chat_logs.map(chatlog => (
+            {
+              ...chatlog,
+              position: chatlog._id == draggingObject.current ? objectsPos.current[draggingObject.current] : chatlog.position
+            }
+          ))
+        })
+      } 
     }
     else {
-      if(chat.$loki) window.chat.updateChatOffset(chat.$loki, offsetRef.current)
+      if(chat.$loki) {
+        window.chat.updateChatOffset(chat.$loki, offsetRef.current)
+      } 
     }
 
     draggingObject.current = null;
@@ -179,7 +193,6 @@ const InfiniteCanvas = () => {
     clearTimeout(wheelTimeout)
     wheelTimeout = setTimeout(() => {
       if(chat.$loki) {
-        console.log(zoomRef.current)
         window.chat.updateChatZoomScale(chat.$loki, zoomRef.current)
       }
     }, 200)
@@ -213,9 +226,7 @@ const InfiniteCanvas = () => {
   }, 100)
 
   // TODO แก้ rerender 4 รอบ หาให้เจอ หลัง feature หลักครบ!!!!!!!!
-  // console.log("first page rerender");
-  console.log(chat);
-
+  
   return (
     <div 
       className={`w-full h-screen ${!isSideBarOpen ? "pl-15": "pl-50"} py-4 -z-10 overflow-hidden absolute`}
