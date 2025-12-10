@@ -1,8 +1,9 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import keytar from 'keytar'
 import db from './db/db.js';
+import getOpenAiClient, { resetClient } from './services/openAiService.js';
+import Store from 'electron-store'
 
 // สำหรับ ES Module path ต้องแปลง __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -53,21 +54,21 @@ app.on('window-all-closed', () => {
 })
 
 
-// ipcMain.handle('ping', (_evt, msg) => {
-//   return `pong: ${msg}`
-// })
-
-const SERVICE = 'canvasGPT';
-const ACCOUNT = 'OpenAI';
+const store = new Store({ encryptionKey: "2wwqnCQOAlaVN3BSRoDKvIrC2HnwElUZ+JNdPQEMSLA=" })
 
 ipcMain.handle('save-api-key', async(_evt, key) => {
-  await keytar.setPassword(SERVICE, ACCOUNT, key);
-  return true;
+  store.set('apiKey', key)
+  resetClient(); // Reset client so it uses the new API key
+})
+
+ipcMain.handle('change-api-key', async(_evt, key) => {
+  store.set('apiKey', key)
+  resetClient(); // Reset client so it uses the new API key
 })
 
 ipcMain.handle('has-api-key', async(_evt) => {
-  const key = await keytar.getPassword(SERVICE, ACCOUNT);
-  return !!key;
+  const key = store.get('apiKey');
+  return !!key
 })
 
 ipcMain.handle('chats-get', () => {
@@ -138,4 +139,48 @@ ipcMain.handle('chats-add-ChatLog', (_evt, _id, newChatLog) => {
   if(newChatLog.parent[0] != null) existing.chat_logs[newChatLog.parent[0]].child.push(newChatLog._id)
   chats.update(existing)
   db.saveDatabase()
+})
+
+ipcMain.handle('openai-response', async (_evt, chatLog, input) => {
+  // const messages = []
+  // chatLog.map(log => {
+  //   if(log.input){
+  //     messages.push(
+  //       {
+  //       role: "user",
+  //       content: log.input
+  //     }
+  //     )
+  //   }
+  //   if(log.response) {
+  //   messages.push(
+  //     {
+  //       role: "assistant",
+  //       content: log.response
+  //     }
+  //   )
+  //   }
+  // })
+
+  // messages.push({role: "user", content: input})
+
+  // const client = getOpenAiClient();
+  // const response = await client.responses.create({
+  //   model: "gpt-5-nano",
+  //   input: messages,
+  //   store: false,
+  //   // reasonging: { effort: "medium" }
+  // })
+
+  // return response;
+
+  const waiteiei = new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve()
+    }, 500);
+  })
+
+  await waiteiei;
+
+  return "wowo"
 })

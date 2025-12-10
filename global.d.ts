@@ -1,6 +1,7 @@
 interface Window {
-  electronAPI: {
-    saveAPIKey: (key: string) => Promise<boolean>;
+  apiKey: {
+    saveAPIKey: (key: string) => void;
+    changeAPIKey: (key: string) => void;
     hasAPIKey: () => Promise<boolean>;
   },
   chat: {
@@ -14,6 +15,9 @@ interface Window {
     updateChatOffset: (_id: string, offset: { x: number, y: number }) => void;
     updateChatLogXY: (_id: string, chatLogsId: number, position: { x: number, y: number }) => void;
     addChatLog: (_id: string, newChatLog: ChatLog) => void;
+  },
+  chatGPT: {
+    getChatResponse: (ChatLog: ChatLog[], input: string) => Promise<string>;
   }
 }
 

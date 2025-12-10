@@ -3,9 +3,10 @@ import { useSideBarstore } from "../../store/sidebarstore";
 import { useChatCanvas } from "../../store/chatstore";
 import ZoomButton from "./ZoomButton";
 import ChatBox from "./ChatBox";
+import ChatBoxSkeleton from "./ChatBoxSkeleton";
 
 const InfiniteCanvas = () => {
-  const { chat, setChat } = useChatCanvas(); // TODO เอาอันนี้ออกแล้วรับมาจาก home
+  const { chat, setChat, isLoading, input } = useChatCanvas(); // TODO เอาอันนี้ออกแล้วรับมาจาก home
   const { isOpen: isSideBarOpen } = useSideBarstore();
   const [mounted, setMounted] = useState(false);
   // state and ref of canvas
@@ -151,9 +152,6 @@ const InfiniteCanvas = () => {
     objectsRefs.current[id].svg.style.transform = svgPos;
   }
 
-  console.log(zoomRef.current, offsetRef.current)
-  console.log(chat.zoomScale, chat.offset)
-
   const onMouseUp = () => {
     if(draggingObject.current != null) {
       if(chat.$loki) {
@@ -202,7 +200,6 @@ const InfiniteCanvas = () => {
 
     zoomRef.current = newScale;
     offsetRef.current = { x: newOffsetX, y: newOffsetY };
-    console.log(zoomRef.current, offsetRef.current)
 
     if (worldDivRef.current) {
         worldDivRef.current.style.transformOrigin = '0 0'; 
@@ -246,8 +243,6 @@ const InfiniteCanvas = () => {
     }
   }, 100)
 
-  // TODO แก้ rerender 4 รอบ หาให้เจอ หลัง feature หลักครบ!!!!!!!!
-  
   return (
     <div 
       className={`w-full h-screen ${!isSideBarOpen ? "pl-15": "pl-50"} py-4 -z-10 overflow-hidden absolute`}
@@ -272,6 +267,10 @@ const InfiniteCanvas = () => {
             setObjectRefs={setObjectRefs}
           />
         ))}
+        {isLoading && (
+          <ChatBoxSkeleton position={{x: 100, y: 100}} input={input} />
+          )
+        }
       </World>
     </div>
   )

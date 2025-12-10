@@ -18,7 +18,6 @@ export const Home = () => {
     queryFn: async () => {
       if(chatId) {
         const chat = await window.chat.getChat(chatId);
-        console.log(chat)
         if(chat) {
           setChat(chat)
         }
@@ -35,6 +34,7 @@ export const Home = () => {
       }
     }
   })
+
 
   return (
     <>

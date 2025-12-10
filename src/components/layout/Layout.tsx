@@ -1,28 +1,23 @@
 import { Outlet } from "react-router-dom"
-import { useEffect } from "react"
 import Sidebar from "./Sidebar"
-import { useApiStore } from "../../store/hasapistore"
-import ApiKey from "../ui/ApiKey"
+import ApiKeyPopup from "../ui/ApiKeyPopup";
+import { useQuery } from "@tanstack/react-query";
 
 const Layout = () => {
-  const {hasApi, setHasApi} = useApiStore();
 
-  useEffect(() => {
-    async function checkAPI() {
-      const exists = await window.electronAPI?.hasAPIKey();
-      if(!exists) {
-        setHasApi(false)
-      }
+  const { data: hasApiKey } = useQuery<boolean>({
+    queryKey: ['hasApiKey'],
+    queryFn: async () => {
+      const hasApiKey = await window.apiKey.hasAPIKey();
+      return hasApiKey
     }
-    
-    checkAPI();
-  }, [])
+  })
 
   return (
     <>
       <Outlet />
       <Sidebar />
-      {/* {!hasApi && <ApiKey setHasApiKey={setHasApi}/>} */}
+      {!hasApiKey && <ApiKeyPopup/>}
     </>
   )
 }

@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { FaCircleArrowUp } from "react-icons/fa6"
 import { useChatCanvas } from "../../store/chatstore";
 import { useQueryClient } from "@tanstack/react-query";
@@ -13,36 +13,71 @@ import { useReplyChatStore } from "../../store/replychatstore";
 const InputPrompt = ({ chatId }: { chatId?: string }) => {
   const [text, setText] = useState("");
   
-  const { chat, addChatLog, setChat } = useChatCanvas();
+  const { chat, addChatLog, setChat, setLoadingInput } = useChatCanvas();
   const { replyChatId, replyChatText, setReplyChatId, setReplyChatText } = useReplyChatStore();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const { mutateAsync: addChat } = useMutation({
+  const { mutateAsync: addChat, isPending } = useMutation({
     mutationFn: async (input: string) => {
-      if(chat.chat_logs?.length === 0) setChat({name: input, zoomScale: 1, chat_logs: []});
+      if(chat.chat_logs?.length === 0) setChat({name: input, zoomScale: 1, chat_logs: [], newChatBoxPosition: { x: 0, y: 0 }});
 
+      const previousChatLog: ChatLog[] = []
+
+      if(replyChatId) {
+        let currentChatId: number | null = replyChatId;
+        while(currentChatId != null) {
+          previousChatLog.unshift(chat.chat_logs[currentChatId]);
+          if(chat.chat_logs[currentChatId].parent[0] != null) {
+            currentChatId = chat.chat_logs[currentChatId].parent[0]
+          }
+          else {
+            currentChatId = null
+          }
+        }
+      }
+
+      const response = await window.chatGPT.getChatResponse(previousChatLog, input)
+
+      
+      let newPosition = chat.newChatBoxPosition ? chat.newChatBoxPosition : { x: 0, y: 0 }
+      console.log(newPosition)
+      if(chat.chat_logs.length != 0) {
+        if(replyChatId) {
+          let yPos = chat.chat_logs[replyChatId].position.y
+          chat.chat_logs[replyChatId].child.forEach(() => {
+            yPos += chat.chat_logs[replyChatId].position.y + 500
+          })
+          newPosition = { x: chat.chat_logs[replyChatId].position.x, y: yPos }
+        }
+        else {
+          newPosition.x += 750
+        }
+      }
+
+      console.log(newPosition)
+      
       // TODO implement ai กับ electron ใน main.js
-      const dummyChatLog: ChatLog = {
+      const newChatLog: ChatLog = {
         _id: chat?.chat_logs?.length ? chat?.chat_logs?.length : 0,
         input, 
-        response: "ChatGPT ทำงานโดยใช้ โมเดลภาษา (Large Language Model) ที่ฝึกจากข้อความจำนวนมหาศาล เพื่อเรียนรู้รูปแบบภาษา ความสัมพันธ์ของคำ",
+        response,
         createdAt: Date.now().toString(), 
-        // position: chat?.chat_logs?.length === 0 ? { x: window.innerWidth/2, y: window.innerHeight/2 } : { x: 0, y: 0 }, 
-        position: { x: 0, y: 0},
+        // position: { x: 0, y: 0},
+        position: newPosition,
         parent: replyChatId != null ? [replyChatId] : [],
         child: []
       }
 
-      addChatLog(dummyChatLog)
+      addChatLog(newChatLog)
       
-      // TODO ย้่ายโค้ดนี้ไปที่ store
       // new chat
       if(chat.chat_logs?.length === 0) {
         let newChat: Chat = {
           name: input,
-          chat_logs: [dummyChatLog],
+          chat_logs: [newChatLog],
           zoomScale: 1,
+          newChatBoxPosition: { x: 0, y: 0 }
         }
         newChat = await window.chat.addChat(newChat);
         queryClient.setQueryData(['chats'], (oldData: Chat[]) => {
@@ -54,20 +89,27 @@ const InputPrompt = ({ chatId }: { chatId?: string }) => {
         navigate(`${queryClient.getQueryData<Chat[]>(['chats'])?.length}`)
       }
       else {
-        if(chat.$loki) window.chat.addChatLog(chat.$loki, dummyChatLog)
+        if(chat.$loki) window.chat.addChatLog(chat.$loki, newChatLog)
       }
     }
   })
 
   const handleClick = async () => {
-    if(!text.trim()) return;
+    if(!text.trim() || isPending) return;
     await addChat(text)
     setText("");
     setReplyChatId(null);
     setReplyChatText("");
   }
 
-  // TODO แยก input เป็นอีก form กัน rerender เยอะ
+  useEffect(() => {
+    if(isPending) {
+      setLoadingInput(text)
+    }
+    else {
+      setLoadingInput("")
+    }
+  }, [isPending])
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-10  pointer-events-none">
@@ -88,6 +130,7 @@ const InputPrompt = ({ chatId }: { chatId?: string }) => {
               <input 
                 type="text"
                 className="outline-none ring-0 p-2 rounded-xl w-full"
+                disabled={isPending}
                 placeholder="Ask anything"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -97,7 +140,9 @@ const InputPrompt = ({ chatId }: { chatId?: string }) => {
                   }
                 }} 
               />
-              <FaCircleArrowUp className="h-full size-8" onClick={handleClick} />
+              <button disabled={isPending} onClick={handleClick}>
+                <FaCircleArrowUp className="size-8"/>
+              </button>
             </div>
           </div>
         </div>

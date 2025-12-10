@@ -1,17 +1,17 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react"
 
-interface ApiKeyProps {
-  setHasApiKey: (value: boolean) => void;
-}
+const ApiKeyPopup = () => {
+  const queryClient = useQueryClient();
 
-const ApiKey = ({ setHasApiKey }: ApiKeyProps) => {
   const [apiKey, setApiKey] = useState("");
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if(!apiKey) return;
-    await window.electronAPI?.saveAPIKey(apiKey);
-    setHasApiKey(true);
+    window.apiKey.saveAPIKey(apiKey);
+    queryClient.invalidateQueries({ queryKey: ['hasApiKey'] });
   }
+
 
   return (
     <div className="fixed inset-0 flex w-full h-full justify-center items-center">
@@ -34,4 +34,4 @@ const ApiKey = ({ setHasApiKey }: ApiKeyProps) => {
   )
 }
 
-export default ApiKey
+export default ApiKeyPopup

@@ -1,12 +1,9 @@
 // electron/preload.js
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('electronAPI', {
-  // ping: (msg) => {
-  //   console.log('ping called', msg);
-  //   return ipcRenderer.invoke('ping', msg);
-  // }
+contextBridge.exposeInMainWorld('apiKey', {
   saveAPIKey: (key) => ipcRenderer.invoke('save-api-key', key),
+  changeAPIKey: (key) => ipcRenderer.invoke('change-api-key', key),
   hasAPIKey: () => ipcRenderer.invoke('has-api-key')
 });
 
@@ -21,3 +18,7 @@ contextBridge.exposeInMainWorld('chat', {
   updateChatLogXY: (_id, chatLogId, position) => ipcRenderer.invoke("chats-chatLog-x-y", _id, chatLogId, position),
   addChatLog: (_id, newChatLog) => ipcRenderer.invoke("chats-add-ChatLog", _id, newChatLog),
 });
+
+contextBridge.exposeInMainWorld('chatGPT', {
+  getChatResponse: (chatLog, input) => ipcRenderer.invoke('openai-response', chatLog, input)
+})
