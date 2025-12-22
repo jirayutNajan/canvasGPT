@@ -72,7 +72,12 @@ ipcMain.handle('has-api-key', async(_evt) => {
 })
 
 ipcMain.handle('chats-get', () => {
-  const chats = db.getCollection('chats').chain().simplesort('$loki', true).data();
+  const chats = db.getCollection('chats').chain().simplesort('$loki', true).data().map(chat => (
+    {
+      $loki: chat.$loki,
+      name: chat.name
+    }
+  ));
   return chats;
 })
 

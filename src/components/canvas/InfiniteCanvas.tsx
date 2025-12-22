@@ -1,16 +1,22 @@
-import React, { useRef, useState, type ReactNode, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { useSideBarstore } from "../../store/sidebarstore";
-import { useChatCanvas } from "../../store/chatstore";
 import ZoomButton from "./ZoomButton";
+import { useQueryClient } from "@tanstack/react-query";
+import type { Chat } from "../../interface/ChatInterface";
 import ChatBox from "./ChatBox";
-import ChatBoxSkeleton from "./ChatBoxSkeleton";
+import InputBox from "./InputBox";
+import { IoMdAdd } from "react-icons/io";
 
-const InfiniteCanvas = () => {
-  const { chat, setChat, isLoading, input } = useChatCanvas(); // TODO เอาอันนี้ออกแล้วรับมาจาก home
+const InfiniteCanvas = ({ chat }: { chat: Chat }) => {
+  const queryClient = useQueryClient();
+
   const { isOpen: isSideBarOpen } = useSideBarstore();
+
   const [mounted, setMounted] = useState(false);
+  const [isAddInput, setIsAddInput] = useState(false);
+
   // state and ref of canvas
-  const offsetRef = useRef({ x: chat.offset?.x || 0, y: chat.offset?.y || 0 });
+  const offsetRef = useRef(chat.offset);
   const zoomRef = useRef(chat?.zoomScale || 1);
   const worldDivRef = useRef<HTMLDivElement>(null);
   const lastPos = useRef({ x: 0, y: 0 });
@@ -28,19 +34,31 @@ const InfiniteCanvas = () => {
   const objectsRefs = useRef<{ 
     [id: number]: { chatBox: HTMLDivElement | null, svg: SVGSVGElement | null, path: SVGPathElement | null }
   }>({});
-
-  const setObjectRefs = (
-    {id, chatBoxRef, svg, path}: 
-    {id: number, chatBoxRef: HTMLDivElement, svg: SVGSVGElement | null, path: SVGPathElement | null}
+  // useCallback ใช้สำหรับครอบฟังก์ชันไม่ให้สร้างใหม่
+  // ใช้ตอนที่ฟังก์ชันนั้นใช้ใน memo
+  const setObjectRefs = useCallback((
+    { id, chatBoxRef, svg, path }: 
+    { id: number, chatBoxRef: HTMLDivElement, svg: SVGSVGElement | null, path: SVGPathElement | null }
   ) => {
     objectsRefs.current[id] = {
       chatBox: chatBoxRef,
       svg: svg,
       path: path
     }
+  }, [])
+
+
+  // Ref ของ inputBox
+  const inputRef = useRef<HTMLDivElement>(null);
+  const setInputRef = useCallback((input: HTMLDivElement) => { 
+    inputRef.current = input
+  }, [])
+  if(inputRef.current) {
+    inputRef.current.style.scale = `${chat?.zoomScale}`
   }
 
-  const handleMouseDown = (e: React.MouseEvent, type: "world" | "object", id?: number) => {
+
+  const handleMouseDown = useCallback((e: React.MouseEvent, type: "world" | "object", id?: number) => {
     lastPos.current = { x: e.clientX, y: e.clientY };
     if (type == "object") {
       if(id == null) return;
@@ -49,7 +67,7 @@ const InfiniteCanvas = () => {
     else if(type == "world") {
       panning.current = true;
     }
-  }
+  }, [])
   
   const onMouseMove = (e: React.MouseEvent) => {
     let dx = (e.clientX - lastPos.current.x);
@@ -156,16 +174,20 @@ const InfiniteCanvas = () => {
     if(draggingObject.current != null) {
       if(chat.$loki) {
         window.chat.updateChatLogXY(chat.$loki, draggingObject.current, objectsPos.current[draggingObject.current])
-        setChat({
-          ...chat,
-          zoomScale: zoomRef.current,
-          offset: offsetRef.current,
-          chat_logs: chat.chat_logs.map(chatlog => (
-            {
-              ...chatlog,
-              position: chatlog._id == draggingObject.current ? objectsPos.current[draggingObject.current] : chatlog.position
-            }
-          ))
+        queryClient.setQueryData<Chat>(['chat', chat.$loki], (oldData: Chat | undefined) => {
+          if(!oldData) return { name: "", chat_logs: [], newChatBoxPosition: { x: 0, y: 0 }, offset: { x: 0, y: 0 }}
+
+          return {
+            ...oldData,
+            zoomScale: zoomRef.current,
+            offset: offsetRef.current,
+            chat_logs: chat.chat_logs.map(chatlog => (
+              {
+                ...chatlog,
+                position: chatlog._id == draggingObject.current ? objectsPos.current[draggingObject.current] : chatlog.position
+              }
+            ))
+          }
         })
       } 
     }
@@ -206,6 +228,12 @@ const InfiniteCanvas = () => {
         worldDivRef.current.style.transform = `translate(${newOffsetX}px, ${newOffsetY}px) scale(${newScale})`;
     }
 
+    if(inputRef.current) {
+      inputRef.current.style.scale = `${newScale}`
+      // ตอนเลื่อนไม่ต้องเห็น inputbox
+      inputRef.current.style.transform = `translate(-500px, -500px)`
+    }
+
     clearTimeout(wheelTimeout)
     wheelTimeout = setTimeout(() => {
       if(chat.$loki) {
@@ -215,19 +243,6 @@ const InfiniteCanvas = () => {
     }, 200)
   }
   
-  const World = ({ children }: { children: ReactNode }) => { 
-    return ( 
-      <div 
-        ref={worldDivRef} 
-        style={{
-          transformOrigin: '0 0',
-          transform: `translate(${offsetRef.current.x}px, ${offsetRef.current.y}px) scale(${zoomRef.current})`
-        }}
-      >
-        {children} 
-      </div> ) 
-  }
-
   useEffect(() => {
     setMounted(true);
     // เพิ่ม setTimeout เพื่อให้ refs มีเวลา set ค่า
@@ -242,36 +257,56 @@ const InfiniteCanvas = () => {
       })
     }
   }, 100)
+  
+  const [t, setT] = useState(0)
 
   return (
     <div 
-      className={`w-full h-screen ${!isSideBarOpen ? "pl-15": "pl-50"} py-4 -z-10 overflow-hidden absolute`}
-      onMouseMove={onMouseMove}
+      className={`w-full h-screen ${!isSideBarOpen ? "pl-15": "pl-50"} py-4 -z-10 overflow-hidden absolute active:cursor-grabbing`}
+      onMouseMove={(e) => {if(!isAddInput) onMouseMove(e)}}
       onMouseUp={onMouseUp}
       onMouseDown={(e) => {e.preventDefault();handleMouseDown(e, "world")}}
       onWheel={handleWheel}
     >
+      <div onClick={() => setT(t+1)}>
+        {t}
+      </div>
       <ZoomButton 
         zoomRef={zoomRef} 
         worldDivRef={worldDivRef}
         offsetRef={offsetRef}
       />
-      {/* World // World คือ canvas นั่นแหละ */}
-      <World>
-        {/* object */}
+      {/* World */}
+      <div 
+        ref={ worldDivRef }
+        style={{
+          transformOrigin: '0 0',
+          transform: `translate(${offsetRef.current.x}px, ${offsetRef.current.y}px) scale(${zoomRef.current})`
+        }}
+      >
         {chat.chat_logs?.map((chatLog) => (
-          <ChatBox 
+          <ChatBox
             chatLog={chatLog} 
             key={chatLog._id} 
             handleMouseDown={handleMouseDown}
             setObjectRefs={setObjectRefs}
           />
         ))}
-        {isLoading && (
+        {/* object */}
+        {/* {isLoading && (
           <ChatBoxSkeleton position={{x: 100, y: 100}} input={input} />
           )
-        }
-      </World>
+          } */}
+      </div>
+      <div className="flex flex-col justify-end h-full pb-5 items-center">
+        <div 
+          className="rounded-full bg-[#5b5b5b]"
+          onClick={() => setIsAddInput((prev) => !prev)}
+        >
+          <IoMdAdd size={40} />
+        </div>
+      </div>
+      {isAddInput && <InputBox setInputRef={setInputRef} scale={zoomRef.current} /> }
     </div>
   )
 }

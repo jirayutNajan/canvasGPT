@@ -8,8 +8,10 @@ import "katex/dist/katex.min.css";
 import type { ChatLog } from "../../interface/ChatInterface";
 import { useReplyChatStore } from "../../store/replychatstore";
 
-export default function ChatBox(
-{ 
+// handleMouseDown, setObjectRefs อยู่ใน memo function ต้นฉบับต้องเป็น useCallback กันสร้างใหม่
+
+const ChatBox = memo((
+  { 
     chatLog, 
     handleMouseDown,
     setObjectRefs
@@ -21,106 +23,107 @@ export default function ChatBox(
       {id, chatBoxRef, svg, path}: 
       {id: number, chatBoxRef: HTMLDivElement, svg: SVGSVGElement | null, path: SVGPathElement | null}
     ) => void,
-  }) 
-  {
-  // กันไม่ใช้ component นี้ตัวอื่นๆที่ subscribe เหมือนกัน rerender ด้วย
+  }) => {
+    const setReplyChatId = useReplyChatStore((s) => s.setReplyChatId);
+    const setReplyChatText = useReplyChatStore((s) => s.setReplyChatText);
 
-  const setReplyChatId = useReplyChatStore((s) => s.setReplyChatId);
-  const setReplyChatText = useReplyChatStore((s) => s.setReplyChatText);
+    const [isReply, setIsReply] = useState(false);
 
-  const [isReply, setIsReply] = useState(false);
+    const chatBoxDivRef = useRef<HTMLDivElement>(null);
+    const svgRef = useRef<SVGSVGElement>(null);
+    const pathRef = useRef<SVGPathElement>(null);
 
-  const chatBoxDivRef = useRef<HTMLDivElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
-  const pathRef = useRef<SVGPathElement>(null);
+    useEffect(() => {
+      if(chatBoxDivRef.current) {
+        setObjectRefs({ 
+          id: chatLog._id, 
+          chatBoxRef: chatBoxDivRef.current,
+          svg: svgRef.current,
+          path: pathRef.current
+        })
+      }
+    }, [])
 
-  useEffect(() => {
-    if(chatBoxDivRef.current) {
-      setObjectRefs({ 
-        id: chatLog._id, 
-        chatBoxRef: chatBoxDivRef.current,
-        svg: svgRef.current,
-        path: pathRef.current
-      })
+    const handleReply = (e: React.MouseEvent<HTMLElement>) => {
+      e.stopPropagation();
+      setIsReply(!isReply);
+      if(!isReply) {
+        setReplyChatId(chatLog._id);
+        setReplyChatText(chatLog.response?.slice(0, 70) || "")
+      }
+      else {
+        setReplyChatId(null);
+        setReplyChatText("")
+      }
     }
-  }, [])
 
-  const handleReply = (e: React.MouseEvent<HTMLElement>) => {
-    e.stopPropagation();
-    setIsReply(!isReply);
-    if(!isReply) {
-      setReplyChatId(chatLog._id);
-      setReplyChatText(chatLog.response?.slice(0, 70) || "")
+    const setSvgAndPathRef = (svg: SVGSVGElement, path: SVGPathElement) => {
+      svgRef.current = svg
+      pathRef.current = path
     }
-    else {
-      setReplyChatId(null);
-      setReplyChatText("")
-    }
-  }
-
-  const setSvgAndPathRef = (svg: SVGSVGElement, path: SVGPathElement) => {
-    svgRef.current = svg
-    pathRef.current = path
-  }
 
 
-  const ChatReply = memo(({ response }: { response?: string }) => {
-    // console.log('re mark')
+    const ChatReply = memo(({ response }: { response?: string }) => {
+      // console.log('re mark')
+      return (
+        <ReactMarkdown
+          children={response}
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
+        />
+      )
+    })
+
+    console.log('re', chatLog._id)
+
     return (
-      <ReactMarkdown
-        children={response}
-        remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
-      />
+      <div
+        ref={chatBoxDivRef}
+        className={`w-[600px] bg-[#4c4c4c] flex flex-col gap-1 border-1 border-[#6a6a6a] hover:border-[#d3d3d3] p-2 rounded-xl
+        cursor-grab select-none absolute transition-colors duration-75 group ${isReply && "border-2 border-white"}`}
+        style={{
+          transform: `translate(${chatLog.position.x}px, ${chatLog.position.y}px)`,
+        }}
+        
+        onMouseDown={(e) => {
+          e.stopPropagation() // กันไม่ให้กดโดน world
+          if(!e.altKey) {
+            handleMouseDown(e, "object", chatLog._id);
+          }
+        }}
+      >
+        {chatLog.parent[0] != null && (
+            <SvgLine 
+              key={chatLog._id}
+              setSvgAndPathRef={setSvgAndPathRef}
+            />
+          )
+        }
+        <div className="absolute bottom-0 w-full justify-center items-center z-50 hidden group-hover:flex cursor-pointer 
+        pointer-events-none">
+          <div 
+            className="rounded-full bg-[#515151] size-14 translate-y-[50%] flex justify-center items-center
+            border-2 border-[#d3d3d3] z-50 hover:bg-[#3a3a3a] transition-colors duration-75 pointer-events-auto
+            active:bg-[#292929] text-3xl"
+            onMouseDown={(e) => e.stopPropagation()} // กัน onmousedown ข้างบน
+            onClick={(handleReply)}
+          >
+            +
+          </div>
+        </div>
+        <div 
+          className="cursor-auto"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div className="flex justify-end select-text">
+            <h1 className="flex bg-[#6a6a6a] py-1 px-2 rounded-md">{chatLog.input}</h1>
+          </div>
+          <div className="select-text">
+            <ChatReply response={chatLog.response} />
+          </div>
+        </div>
+      </div>
     )
   })
 
-  return (
-    <div
-      ref={chatBoxDivRef}
-      className={`w-[600px] bg-[#4c4c4c] flex flex-col gap-1 border-1 border-[#6a6a6a] hover:border-[#d3d3d3] p-2 rounded-xl
-      cursor-grab select-none absolute transition-colors duration-75 group ${isReply && "border-2 border-white"}`}
-      style={{
-        transform: `translate(${chatLog.position.x}px, ${chatLog.position.y}px)`,
-      }}
-      
-      onMouseDown={(e) => {
-        e.stopPropagation() // กันไม่ให้กดโดน world
-        if(!e.altKey) {
-          handleMouseDown(e, "object", chatLog._id);
-        }
-      }}
-    >
-      {chatLog.parent[0] != null && (
-          <SvgLine 
-            key={chatLog._id}
-            setSvgAndPathRef={setSvgAndPathRef}
-          />
-        )
-      }
-      <div className="absolute bottom-0 w-full justify-center items-center z-50 hidden group-hover:flex cursor-pointer 
-      pointer-events-none">
-        <div 
-          className="rounded-full bg-[#515151] size-14 translate-y-[50%] flex justify-center items-center
-          border-2 border-[#d3d3d3] z-50 hover:bg-[#3a3a3a] transition-colors duration-75 pointer-events-auto
-          active:bg-[#292929] text-3xl"
-          onMouseDown={(e) => e.stopPropagation()} // กัน onmousedown ข้างบน
-          onClick={(handleReply)}
-        >
-          +
-        </div>
-      </div>
-      <div 
-        className="cursor-auto"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-end select-text">
-          <h1 className="flex bg-[#6a6a6a] py-1 px-2 rounded-md">{chatLog.input}</h1>
-        </div>
-        <div className="select-text">
-          <ChatReply response={chatLog.response} />
-        </div>
-      </div>
-    </div>
-  )
-}
+export default ChatBox;

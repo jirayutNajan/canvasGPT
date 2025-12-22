@@ -3,13 +3,11 @@ import { useSideBarstore } from "../../store/sidebarstore";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-import type { Chat } from "../../interface/ChatInterface";
-
 const Sidebar = () => {
   // TODO toggle sidebar
   const { isOpen: isSideBarOpen } = useSideBarstore();
 
-  const { data: chats } = useQuery<Chat[]>({
+  const { data: chats } = useQuery<{ $loki: number, name: string }[]>({
     queryKey: ['chats'],
     queryFn: async () => {
       const docs = await window.chat.getChats();
@@ -25,12 +23,12 @@ const Sidebar = () => {
       <Link to={"/"}>
         <h1 className="text-xl">CanvasGPT</h1>
       </Link>
-      <div className="flex items-center mt-4 gap-2 hover:bg-[#0000003c] p-2 rounded-xl cursor-pointer">
-        <IoMdAdd size={20}/>
-        <Link to={"/"}>
-          <h1>New Canvas</h1>
-        </Link>
-      </div>
+      <Link to={"/"}>
+        <div className="flex items-center mt-4 gap-2 hover:bg-[#0000003c] p-2 rounded-xl cursor-pointer">
+          <IoMdAdd size={20}/>
+            <h1>New Canvas</h1>
+        </div>
+      </Link>
       <hr className="text-[#7b7b7b] my-1" />
       <h1 className="py-1 text-[#b8b4b4]">Chats</h1>
       <div>

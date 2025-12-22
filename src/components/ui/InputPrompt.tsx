@@ -1,7 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react"
 import { FaCircleArrowUp } from "react-icons/fa6"
-import { useChatCanvas } from "../../store/chatstore";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
@@ -10,23 +9,21 @@ import { useReplyChatStore } from "../../store/replychatstore";
 
 // ทำ chat reply ต่อ
 
-const InputPrompt = ({ chatId }: { chatId?: string }) => {
+const InputPrompt = ({ chat }: { chat: Chat }) => {
   const [text, setText] = useState("");
   
-  const { chat, addChatLog, setChat, setLoadingInput } = useChatCanvas();
   const { replyChatId, replyChatText, setReplyChatId, setReplyChatText } = useReplyChatStore();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const { mutateAsync: addChat, isPending } = useMutation({
     mutationFn: async (input: string) => {
-      if(chat.chat_logs?.length === 0) setChat({name: input, zoomScale: 1, chat_logs: [], newChatBoxPosition: { x: 0, y: 0 }});
-
       const previousChatLog: ChatLog[] = []
 
       if(replyChatId) {
         let currentChatId: number | null = replyChatId;
         while(currentChatId != null) {
+          // unshift คือเพ่ิมข้างหน้า
           previousChatLog.unshift(chat.chat_logs[currentChatId]);
           if(chat.chat_logs[currentChatId].parent[0] != null) {
             currentChatId = chat.chat_logs[currentChatId].parent[0]
@@ -39,37 +36,30 @@ const InputPrompt = ({ chatId }: { chatId?: string }) => {
 
       const response = await window.chatGPT.getChatResponse(previousChatLog, input)
 
-      
-      let newPosition = chat.newChatBoxPosition ? chat.newChatBoxPosition : { x: 0, y: 0 }
-      console.log(newPosition)
+      let newPosition = { x: 0, y: 0 }
       if(chat.chat_logs.length != 0) {
-        if(replyChatId) {
-          let yPos = chat.chat_logs[replyChatId].position.y
-          chat.chat_logs[replyChatId].child.forEach(() => {
-            yPos += chat.chat_logs[replyChatId].position.y + 500
-          })
-          newPosition = { x: chat.chat_logs[replyChatId].position.x, y: yPos }
-        }
-        else {
-          newPosition.x += 750
-        }
+        if(replyChatId != null) newPosition = { x: chat.chat_logs[replyChatId].position.x, y: chat.chat_logs[replyChatId].position.y + 200 }
       }
 
-      console.log(newPosition)
-      
-      // TODO implement ai กับ electron ใน main.js
       const newChatLog: ChatLog = {
         _id: chat?.chat_logs?.length ? chat?.chat_logs?.length : 0,
         input, 
         response,
-        createdAt: Date.now().toString(), 
-        // position: { x: 0, y: 0},
+        createdAt: Date.now().toString(),
         position: newPosition,
         parent: replyChatId != null ? [replyChatId] : [],
         child: []
       }
 
-      addChatLog(newChatLog)
+      queryClient.setQueryData<Chat>(['chat', chat.$loki], (oldData: Chat | undefined) => {
+        if(!oldData) return { name: "", chat_logs: [], newChatBoxPosition: { x: 0, y: 0 }, offset: { x: 0, y: 0 }}
+
+        return {
+          ...oldData,
+          chat_logs: [...chat.chat_logs, newChatLog],
+          newChatBoxPosition: newPosition
+        }
+      })
       
       // new chat
       if(chat.chat_logs?.length === 0) {
@@ -77,10 +67,12 @@ const InputPrompt = ({ chatId }: { chatId?: string }) => {
           name: input,
           chat_logs: [newChatLog],
           zoomScale: 1,
-          newChatBoxPosition: { x: 0, y: 0 }
+          newChatBoxPosition: { x: 0, y: 0 },
+          offset: { x: 0, y: 0 }
         }
         newChat = await window.chat.addChat(newChat);
-        queryClient.setQueryData(['chats'], (oldData: Chat[]) => {
+        // add chat ไปที่ sidebar
+        queryClient.setQueryData(['chats'], (oldData: { $loki: number, name: string }[]) => {
           return [
             newChat,
             ...oldData
@@ -102,14 +94,14 @@ const InputPrompt = ({ chatId }: { chatId?: string }) => {
     setReplyChatText("");
   }
 
-  useEffect(() => {
-    if(isPending) {
-      setLoadingInput(text)
-    }
-    else {
-      setLoadingInput("")
-    }
-  }, [isPending])
+  // useEffect(() => {
+  //   if(isPending) {
+  //     setLoadingInput(text)
+  //   }
+  //   else {
+  //     setLoadingInput("")
+  //   }
+  // }, [isPending])
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-10  pointer-events-none">

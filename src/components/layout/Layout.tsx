@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 
 const Layout = () => {
 
-  const { data: hasApiKey } = useQuery<boolean>({
+  const { data: hasApiKey, isPending } = useQuery<boolean>({
     queryKey: ['hasApiKey'],
     queryFn: async () => {
       const hasApiKey = await window.apiKey.hasAPIKey();
@@ -17,7 +17,7 @@ const Layout = () => {
     <>
       <Outlet />
       <Sidebar />
-      {!hasApiKey && <ApiKeyPopup/>}
+      {(!hasApiKey && !isPending) && <ApiKeyPopup/>}
     </>
   )
 }

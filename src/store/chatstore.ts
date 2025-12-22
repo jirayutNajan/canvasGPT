@@ -1,35 +1,19 @@
-import { create } from "zustand";
-import type { Chat, ChatLog } from "../interface/ChatInterface";
+import { create } from "zustand"
 
-
-export interface ChatStore {
-  chat: Chat;
+interface ChatStore {
   input: string;
-  isLoading: boolean;
-  setLoadingInput: (input: string) => void;
-  setChat: (chat: Chat ) => void;
-  addChatLog: (chatLog: ChatLog) => void;
+  replyChatId: number | null;
+  replyChatText: string;
+  setInput: (input: string) => void;
+  setReplyChatId: (id: number | null) => void;
+  setReplyChatText: (text: string) => void;
 }
 
-export const useChatCanvas = create<ChatStore>((set) => ({
-  chat: { name: "", chat_logs: [], newChatBoxPosition: { x: 0, y: 0 } },
+export const useChatStore = create<ChatStore>((set) => ({
   input: "",
-  isLoading: false,
-  setLoadingInput: (input: string) => {
-    if(input) {
-      return set({ isLoading: true, input })
-    }
-    else {
-      set({ isLoading: false, input: "" })
-    }
-  },
-  setChat: (chat) => set({ chat }), // set chat ตามที่ต้องการ id, name, chat_logs
-  addChatLog: (chatLog: ChatLog) => // การเพิ่ม chat_logs
-    set((state) => ({
-      chat: {
-        ...state.chat,
-        chat_logs: [...(state.chat.chat_logs || []), chatLog]
-      }
-    }
-  ))
+  replyChatId: null,
+  replyChatText: "",
+  setInput: (input: string) => set({ input }),
+  setReplyChatId: (id: number | null) => set({ replyChatId: id }),
+  setReplyChatText: ( text: string ) => set({ replyChatText: text })
 }))
