@@ -165,20 +165,6 @@ ipcMain.handle('openai-response', async (_evt, chatLog, input) => {
   //     }
   //   )
   //   }
-  // })
-
-  // messages.push({role: "user", content: input})
-
-  // const client = getOpenAiClient();
-  // const response = await client.responses.create({
-  //   model: "gpt-5-nano",
-  //   input: messages,
-  //   store: false,
-  //   // reasonging: { effort: "medium" }
-  // })
-
-  // return response;
-
   const waiteiei = new Promise((resolve, reject) => {
     setTimeout(() => {
       resolve()

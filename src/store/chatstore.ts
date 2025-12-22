@@ -1,19 +1,20 @@
-import { create } from "zustand"
+import { create } from 'zustand'
 
 interface ChatStore {
-  input: string;
-  replyChatId: number | null;
-  replyChatText: string;
-  setInput: (input: string) => void;
-  setReplyChatId: (id: number | null) => void;
-  setReplyChatText: (text: string) => void;
+  isAddInput: boolean,
+  input: string,
+  replayChatId?: number,
+  setIsAddInput: (input: boolean) => void,
+  setInput: (input: string) => void,
+  setReplyChatId: (id: number) => void
 }
 
+
 export const useChatStore = create<ChatStore>((set) => ({
+  isAddInput: false,
   input: "",
-  replyChatId: null,
-  replyChatText: "",
+  replayChatId: undefined,
+  setIsAddInput: (isAdd: boolean) => set({ isAddInput: isAdd }),
   setInput: (input: string) => set({ input }),
-  setReplyChatId: (id: number | null) => set({ replyChatId: id }),
-  setReplyChatText: ( text: string ) => set({ replyChatText: text })
+  setReplyChatId: (id: number) => set({ replayChatId: id })
 }))

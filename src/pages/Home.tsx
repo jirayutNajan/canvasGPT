@@ -1,6 +1,5 @@
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 import InfiniteCanvas from "../components/canvas/InfiniteCanvas";
-import InputPrompt from "../components/ui/InputPrompt";
 import { useQuery } from "@tanstack/react-query";
 
 import type { Chat } from "../interface/ChatInterface";

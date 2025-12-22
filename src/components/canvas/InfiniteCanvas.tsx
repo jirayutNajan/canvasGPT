@@ -11,6 +11,7 @@ const InfiniteCanvas = ({ chat }: { chat: Chat }) => {
   const queryClient = useQueryClient();
 
   const { isOpen: isSideBarOpen } = useSideBarstore();
+  // const {}
 
   const [mounted, setMounted] = useState(false);
   const [isAddInput, setIsAddInput] = useState(false);
