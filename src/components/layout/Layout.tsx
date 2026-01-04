@@ -15,8 +15,8 @@ const Layout = () => {
 
   return (
     <>
-      <Outlet />
       <Sidebar />
+      <Outlet />
       {(!hasApiKey && !isPending) && <ApiKeyPopup/>}
     </>
   )

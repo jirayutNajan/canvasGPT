@@ -31,7 +31,7 @@ export const Home = () => {
   return (
     <>
       {(!isPending) && <InfiniteCanvas chat={chat} />}
-      <div className="fixed top-10 flex w-full justify-center">http://localhost:5173{url.pathname}</div>
+      {/* <div className="fixed top-10 flex w-full justify-center">http://localhost:5173{url.pathname}</div> */}
     </>
   )
 }

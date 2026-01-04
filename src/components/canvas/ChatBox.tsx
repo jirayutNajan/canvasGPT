@@ -42,7 +42,7 @@ const ChatBox = memo((
           path: pathRef.current
         })
       }
-    }, [])
+    }, [chatLog._id, setObjectRefs])
 
     const handleReply = (e: React.MouseEvent<HTMLElement>) => {
       e.stopPropagation();
