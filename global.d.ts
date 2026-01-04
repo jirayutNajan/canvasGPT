@@ -11,7 +11,6 @@ interface Window {
     updateChat: (_id: string, chatLogs: ChatLog[]) => void;
     deleteChat: (_id: string) => boolean; // คืน true/false
     updateChatZoomScale: (_id: string, zoomScale: number) => void;
-    updateChatLogPos: (_id: string, chatLog: ChatLog) => void;
     updateChatOffset: (_id: string, offset: { x: number, y: number }) => void;
     updateChatLogXY: (_id: string, chatLogsId: number, position: { x: number, y: number }) => void;
     addChatLog: (_id: string, newChatLog: ChatLog) => void;

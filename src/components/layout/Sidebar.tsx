@@ -1,3 +1,4 @@
+import { useLocation } from "react-router-dom";
 import { IoMdAdd } from "react-icons/io"
 import { useSideBarstore } from "../../store/sidebarstore";
 import { Link } from "react-router-dom";
@@ -6,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 const Sidebar = () => {
   // TODO toggle sidebar
   const { isOpen: isSideBarOpen } = useSideBarstore();
+  const url = useLocation();
 
   const { data: chats } = useQuery<{ $loki: number, name: string }[]>({
     queryKey: ['chats'],
@@ -20,6 +22,7 @@ const Sidebar = () => {
 
   return (
     <div className={`fixed ${!isSideBarOpen ? "w-15": "w-50"} h-screen bg-[#2a2a2a] flex flex-col py-4 px-3 z-10`}>
+      <div className="fixed top-10 flex w-full justify-center text-black">http://localhost:5173{url.pathname}</div>
       <Link to={"/"}>
         <h1 className="text-xl">CanvasGPT</h1>
       </Link>

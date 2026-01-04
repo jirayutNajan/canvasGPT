@@ -1,12 +1,13 @@
-import { useLocation, useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import InfiniteCanvas from "../components/canvas/InfiniteCanvas";
 import { useQuery } from "@tanstack/react-query";
 
 import type { Chat } from "../interface/ChatInterface";
+import { ReactFlowProvider } from "@xyflow/react";
 
 export const Home = () => {
   const { id: chatId } = useParams();
-  const url = useLocation();
+
   const navigate = useNavigate();
 
   const { data: chat, isPending } = useQuery<Chat | undefined>({
@@ -28,10 +29,14 @@ export const Home = () => {
     return <></>
   }
 
+  console.log(chat.$loki)
+
   return (
     <>
-      {(!isPending) && <InfiniteCanvas chat={chat} />}
-      {/* <div className="fixed top-10 flex w-full justify-center">http://localhost:5173{url.pathname}</div> */}
+    <ReactFlowProvider key={chatId || 'new'}>
+        {(!isPending) && <InfiniteCanvas chat={chat} />}
+
+      </ReactFlowProvider>
     </>
   )
 }
