@@ -15,5 +15,5 @@ export interface Chat {
   chat_logs: ChatLog[];
   offset: { x: number, y: number };
   zoomScale?: number;
-  newChatBoxPosition: { x: number, y: number }, // remove later
+  // newChatBoxPosition: { x: number, y: number }, // remove later
 }

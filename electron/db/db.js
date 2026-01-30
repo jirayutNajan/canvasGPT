@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 // กำหนด path ของไฟล์ DB
 const dbPath = path.join(__dirname, 'app.db');
-// TODO ตอนจะ build app
+// TODO: ตอนจะ build app
 // const dbPath = path.join(app.getPath('userData'), 'app.db');
 
 // สร้าง DB

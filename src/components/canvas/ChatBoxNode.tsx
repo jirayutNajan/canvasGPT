@@ -52,6 +52,7 @@ const MarkdownRenderer = memo(({ content }: { content: string }) => {
   )
 })
 
+// TODO: ทำ  animetion loading
 export default function ChatBoxNode({ data }: NodeProps<ChatBoxNode>) {
   return (
     <div className="relative max-w-4xl min-w-sm bg-black p-1 rounded-xl">

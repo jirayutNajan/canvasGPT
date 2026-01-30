@@ -29,14 +29,11 @@ export const Home = () => {
     return <></>
   }
 
-  console.log(chat.$loki)
-
   return (
     <>
     <ReactFlowProvider key={chatId || 'new'}>
         {(!isPending) && <InfiniteCanvas chat={chat} />}
-
-      </ReactFlowProvider>
+    </ReactFlowProvider>
     </>
   )
 }

@@ -1,10 +1,11 @@
+// อาจจะไม่ได้ใช้แล้ว ใช้ของที่ reactflow มีให้แทน
 import { create } from 'zustand'
 
 interface ChatStore {
   isAddInput: boolean,
   input: string,
   replayChatId?: number,
-  setIsAddInput: (input: boolean) => void,
+  setIsAddInput: (isAdd: boolean) => void,
   setInput: (input: string) => void,
   setReplyChatId: (id: number) => void
 }
